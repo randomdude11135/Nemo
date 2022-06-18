@@ -3635,7 +3635,7 @@ if shared.VapeExecuted then
 				addbutton.AutoButtonColor = false
 				addbutton.Size = UDim2.new(0, 16, 0, 16)
 				addbutton.ImageColor3 = Color3.fromHSV(0.44, 1, 1)
-				addbutton.Image = getcustomassetfunc("vassets/AddItem.png")
+				addbutton.Image = getcustomassetfunc("Nemo/assets/AddItem.png")
 				addbutton.Parent = textboxbkg
 				local scrollframebkg = Instance.new("Frame")
 				scrollframebkg.ZIndex = 2
