@@ -1,20 +1,19 @@
 repeat task.wait() until game:IsLoaded() == true
-print("Running Script")
 local injected = true
 local oldrainbow = false
-local customdir = "Nemo/"
+local customdir = (shared.VapePrivate and "vapeprivate/" or "vape/")
 local betterisfile = function(file)
 	local suc, res = pcall(function() return readfile(file) end)
 	return suc and res ~= nil
 end
 local function GetURL(scripturl)
 	if shared.VapeDeveloper then
-		if not betterisfile("Nemo/"..scripturl) then
-			error("File not found : Nemo/"..scripturl)
+		if not betterisfile("vape/"..scripturl) then
+			error("File not found : vape/"..scripturl)
 		end
-		return readfile("Nemo/"..scripturl)
+		return readfile("vape/"..scripturl)
 	else
-		local res = game:HttpGet("https://raw.githubusercontent.com/randomdude11135/Nemo/main/"..scripturl, true)
+		local res = game:HttpGet("https://raw.githubusercontent.com/7GrandDadPGN/VapeV4ForRoblox/main/"..scripturl, true)
 		assert(res ~= "404: Not Found", "File not found")
 		return res
 	end
@@ -39,7 +38,7 @@ end
 
 local function checkassetversion()
 	local req = requestfunc({
-		Url = "https://raw.githubusercontent.com/randomdude11135/Nemo/main/assetsversion.dat",
+		Url = "https://raw.githubusercontent.com/7GrandDadPGN/VapeV4ForRoblox/main/assetsversion.dat",
 		Method = "GET"
 	})
 	if req.StatusCode == 200 then
@@ -61,53 +60,46 @@ else
 	shared.VapeExecuted = true
 end
 
-print("Creating Folder")
-
-if isfolder("Nemo") == false then
-	makefolder("Nemo")
+if isfolder(customdir:gsub("/", "")) == false then
+	makefolder(customdir:gsub("/", ""))
 end
-print("Creating Asset Version")
-
-if not betterisfile("Nemo/assetsversion.dat") then
-	writefile("Nemo/assetsversion.dat", "1")
+if isfolder("vape") == false then
+	makefolder("vape")
 end
-
+if not betterisfile("vape/assetsversion.dat") then
+	writefile("vape/assetsversion.dat", "1")
+end
 if isfolder(customdir.."CustomModules") == false then
 	makefolder(customdir.."CustomModules")
 end
 if isfolder(customdir.."Profiles") == false then
 	makefolder(customdir.."Profiles")
 end
-
-print("Creating Language Folder")
-
-if not betterisfile("Nemo/language.dat") then
+if not betterisfile("vape/language.dat") then
 	local suc, res = pcall(function() return gethiddenproperty(game:GetService("Players").LocalPlayer, "ReplicatedLocaleId") end)
-	writefile("Nemo/language.dat", suc and res or "en-us")
+	writefile("vape/language.dat", suc and res or "en-us")
 end
-
-if not pcall(function() return GetURL("translations/"..readfile("Nemo/language.dat")..".Nemotranslation") end) then
-	writefile("Nemo/language.dat", "en-us")
+if not pcall(function() return GetURL("translations/"..readfile("vape/language.dat")..".vapetranslation") end) then
+	writefile("vape/language.dat", "en-us")
 end
-
 local assetver = checkassetversion()
-if assetver and assetver > readfile("Nemo/assetsversion.dat") then
+if assetver and assetver > readfile("vape/assetsversion.dat") then
 	if shared.VapeDeveloper == nil then
-		if isfolder("Nemo/assets") then
+		if isfolder("vape/assets") then
 			if delfolder then
-				delfolder("Nemo/assets")
+				delfolder("vape/assets")
 			end
 		end
-		writefile("Nemo/assetsversion.dat", assetver)
+		writefile("vape/assetsversion.dat", assetver)
 	end
 end
-if isfolder("Nemo/assets") == false then
-	makefolder("Nemo/assets")
+if isfolder("vape/assets") == false then
+	makefolder("vape/assets")
 end
 
 local GuiLibrary = loadstring(GetURL("NewGuiLibrary.lua"))()
-local translations = {}
-local translatedlogo = false
+local translations = {}--loadstring(GetURL("translations/"..GuiLibrary["Language"]..".vapetranslation"))()
+local translatedlogo = false--pcall(function() return GetURL("translations/"..GuiLibrary["Language"].."/VapeLogo1.png") end)
 
 local checkpublicreponum = 0
 local checkpublicrepo
@@ -158,7 +150,7 @@ local function getcustomassetfunc(path)
 			textlabel:Remove()
 		end)
 		local req = requestfunc({
-			Url = "https://raw.githubusercontent.com/randomdude11135/Nemo/main/"..path:gsub("Nemo/assets", "assets"),
+			Url = "https://raw.githubusercontent.com/7GrandDadPGN/VapeV4ForRoblox/main/"..path:gsub("vape/assets", "assets"),
 			Method = "GET"
 		})
 		writefile(path, req.Body)
@@ -182,68 +174,68 @@ end)
 local GUI = GuiLibrary.CreateMainWindow()
 local Combat = GuiLibrary.CreateWindow({
 	["Name"] = "Combat", 
-	["Icon"] = "Nemo/assets/CombatIcon.png", 
+	["Icon"] = "vape/assets/CombatIcon.png", 
 	["IconSize"] = 15
 })
 local Blatant = GuiLibrary.CreateWindow({
 	["Name"] = "Blatant", 
-	["Icon"] = "Nemo/assets/BlatantIcon.png", 
+	["Icon"] = "vape/assets/BlatantIcon.png", 
 	["IconSize"] = 16
 })
 local Render = GuiLibrary.CreateWindow({
 	["Name"] = "Render", 
-	["Icon"] = "Nemo/assets/RenderIcon.png", 
+	["Icon"] = "vape/assets/RenderIcon.png", 
 	["IconSize"] = 17
 })
 local Utility = GuiLibrary.CreateWindow({
 	["Name"] = "Utility", 
-	["Icon"] = "Nemo/assets/UtilityIcon.png", 
+	["Icon"] = "vape/assets/UtilityIcon.png", 
 	["IconSize"] = 17
 })
 local World = GuiLibrary.CreateWindow({
 	["Name"] = "World", 
-	["Icon"] = "Nemo/assets/WorldIcon.png", 
+	["Icon"] = "vape/assets/WorldIcon.png", 
 	["IconSize"] = 16
 })
 local Friends = GuiLibrary.CreateWindow2({
 	["Name"] = "Friends", 
-	["Icon"] = "Nemo/assets/FriendsIcon.png", 
+	["Icon"] = "vape/assets/FriendsIcon.png", 
 	["IconSize"] = 17
 })
 local Profiles = GuiLibrary.CreateWindow2({
 	["Name"] = "Profiles", 
-	["Icon"] = "Nemo/assets/ProfilesIcon.png", 
+	["Icon"] = "vape/assets/ProfilesIcon.png", 
 	["IconSize"] = 19
 })
 GUI.CreateDivider()
 GUI.CreateButton({
 	["Name"] = "Combat", 
 	["Function"] = function(callback) Combat.SetVisible(callback) end, 
-	["Icon"] = "Nemo/assets/CombatIcon.png", 
+	["Icon"] = "vape/assets/CombatIcon.png", 
 	["IconSize"] = 15
 })
 GUI.CreateButton({
 	["Name"] = "Blatant", 
 	["Function"] = function(callback) Blatant.SetVisible(callback) end, 
-	["Icon"] = "Nemo/assets/BlatantIcon.png", 
+	["Icon"] = "vape/assets/BlatantIcon.png", 
 	["IconSize"] = 16
 })
 GUI.CreateButton({
 	["Name"] = "Render", 
 	["Function"] = function(callback) Render.SetVisible(callback) end, 
-	["Icon"] = "Nemo/assets/RenderIcon.png", 
+	["Icon"] = "vape/assets/RenderIcon.png", 
 	["IconSize"] = 17
 })
 GUI.CreateButton({
 	["Name"] = "Utility", 
 	["Function"] = function(callback) Utility.SetVisible(callback) end, 
-	["Icon"] = "Nemo/assets/UtilityIcon.png", 
+	["Icon"] = "vape/assets/UtilityIcon.png", 
 	["IconSize"] = 17
 })
 GUI.CreateButton({
 	["Name"] = "World", 
 	["Function"] = function(callback) World.SetVisible(callback) end, 
-	["Icon"] = "Nemo/assets/WorldIcon.png", 
+	["Icon"] = "vape/assets/WorldIcon.png", 
 	["IconSize"] = 16
 })
 GUI.CreateDivider("MISC")
@@ -356,7 +348,7 @@ ProfilesTextList = Profiles.CreateTextList({
 		bindbkg.Visible = GuiLibrary["Profiles"][profilename]["Keybind"] ~= ""
 		bindbkg.Parent = obj
 		local bindimg = Instance.new("ImageLabel")
-		bindimg.Image = getcustomassetfunc("Nemo/assets/KeybindIcon.png")
+		bindimg.Image = getcustomassetfunc("vape/assets/KeybindIcon.png")
 		bindimg.BackgroundTransparency = 1
 		bindimg.Size = UDim2.new(0, 12, 0, 12)
 		bindimg.Position = UDim2.new(0, 4, 0, 5)
@@ -420,14 +412,14 @@ ProfilesTextList = Profiles.CreateTextList({
 			end
 		end)
 		bindbkg.MouseEnter:connect(function() 
-			bindimg.Image = getcustomassetfunc("Nemo/assets/PencilIcon.png") 
+			bindimg.Image = getcustomassetfunc("vape/assets/PencilIcon.png") 
 			bindimg.Visible = true
 			bindtext.Visible = false
 			bindbkg.Size = UDim2.new(0, 20, 0, 21)
 			bindbkg.Position = UDim2.new(1, -50, 0, 6)
 		end)
 		bindbkg.MouseLeave:connect(function() 
-			bindimg.Image = getcustomassetfunc("Nemo/assets/KeybindIcon.png")
+			bindimg.Image = getcustomassetfunc("vape/assets/KeybindIcon.png")
 			if GuiLibrary["Profiles"][profilename]["Keybind"] ~= "" then
 				bindimg.Visible = false
 				bindtext.Visible = true
@@ -481,7 +473,7 @@ local OnlineProfilesButtonImage = Instance.new("ImageLabel")
 OnlineProfilesButtonImage.BackgroundTransparency = 1
 OnlineProfilesButtonImage.Position = UDim2.new(0, 14, 0, 7)
 OnlineProfilesButtonImage.Size = UDim2.new(0, 17, 0, 16)
-OnlineProfilesButtonImage.Image = getcustomassetfunc("Nemo/assets/OnlineProfilesButton.png")
+OnlineProfilesButtonImage.Image = getcustomassetfunc("vape/assets/OnlineProfilesButton.png")
 OnlineProfilesButtonImage.ImageColor3 = Color3.fromRGB(121, 121, 121)
 OnlineProfilesButtonImage.ZIndex = 1
 OnlineProfilesButtonImage.Active = false
@@ -502,7 +494,7 @@ OnlineProfilesExitButton.Name = "OnlineProfilesExitButton"
 OnlineProfilesExitButton.ImageColor3 = Color3.fromRGB(121, 121, 121)
 OnlineProfilesExitButton.Size = UDim2.new(0, 24, 0, 24)
 OnlineProfilesExitButton.AutoButtonColor = false
-OnlineProfilesExitButton.Image = getcustomassetfunc("Nemo/assets/ExitIcon1.png")
+OnlineProfilesExitButton.Image = getcustomassetfunc("vape/assets/ExitIcon1.png")
 OnlineProfilesExitButton.Visible = true
 OnlineProfilesExitButton.Position = UDim2.new(1, -31, 0, 8)
 OnlineProfilesExitButton.BackgroundColor3 = Color3.fromRGB(26, 25, 26)
@@ -519,7 +511,7 @@ end)
 local OnlineProfilesFrameShadow = Instance.new("ImageLabel")
 OnlineProfilesFrameShadow.AnchorPoint = Vector2.new(0.5, 0.5)
 OnlineProfilesFrameShadow.Position = UDim2.new(0.5, 0, 0.5, 0)
-OnlineProfilesFrameShadow.Image = getcustomassetfunc("Nemo/assets/WindowBlur.png")
+OnlineProfilesFrameShadow.Image = getcustomassetfunc("vape/assets/WindowBlur.png")
 OnlineProfilesFrameShadow.BackgroundTransparency = 1
 OnlineProfilesFrameShadow.ZIndex = -1
 OnlineProfilesFrameShadow.Size = UDim2.new(1, 6, 1, 6)
@@ -529,7 +521,7 @@ OnlineProfilesFrameShadow.SliceCenter = Rect.new(10, 10, 118, 118)
 OnlineProfilesFrameShadow.Parent = OnlineProfilesFrame
 local OnlineProfilesFrameIcon = Instance.new("ImageLabel")
 OnlineProfilesFrameIcon.Size = UDim2.new(0, 19, 0, 16)
-OnlineProfilesFrameIcon.Image = getcustomassetfunc("Nemo/assets/ProfilesIcon.png")
+OnlineProfilesFrameIcon.Image = getcustomassetfunc("vape/assets/ProfilesIcon.png")
 OnlineProfilesFrameIcon.Name = "WindowIcon"
 OnlineProfilesFrameIcon.BackgroundTransparency = 1
 OnlineProfilesFrameIcon.Position = UDim2.new(0, 10, 0, 13)
@@ -599,7 +591,7 @@ OnlineProfilesButton.MouseButton1Click:connect(function()
 	if profilesloaded == false then
 		local onlineprofiles = {}
 		local success, result = pcall(function()
-			return game:GetService("HttpService"):JSONDecode((shared.VapeDeveloper and readfile("Nemo/OnlineProfiles.vapeonline") or game:HttpGet("https://raw.githubusercontent.com/randomdude11135/Nemo/main/OnlineProfiles.vapeonline", true)))
+			return game:GetService("HttpService"):JSONDecode((shared.VapeDeveloper and readfile("vape/OnlineProfiles.vapeonline") or game:HttpGet("https://raw.githubusercontent.com/7GrandDadPGN/VapeV4ForRoblox/main/OnlineProfiles.vapeonline", true)))
 		end)
 		onlineprofiles = (success and result or {})
 		for i2,v2 in pairs(onlineprofiles) do
@@ -654,7 +646,7 @@ OnlineProfilesButton.MouseButton1Click:connect(function()
 					profiledownload.BackgroundColor3 = Color3.fromRGB(31, 30, 31)
 				end)
 				profiledownload.MouseButton1Click:connect(function()
-					writefile(customdir.."Profiles/"..v2["ProfileName"]..tostring(game.PlaceId)..".vapeprofile.txt", (shared.VapeDeveloper and readfile("Nemo/OnlineProfiles/"..v2["OnlineProfileName"]) or game:HttpGet("https://raw.githubusercontent.com/7GrandDadPGN/VapeV4ForRoblox/main/OnlineProfiles/"..v2["OnlineProfileName"], true)))
+					writefile(customdir.."Profiles/"..v2["ProfileName"]..tostring(game.PlaceId)..".vapeprofile.txt", (shared.VapeDeveloper and readfile("vape/OnlineProfiles/"..v2["OnlineProfileName"]) or game:HttpGet("https://raw.githubusercontent.com/7GrandDadPGN/VapeV4ForRoblox/main/OnlineProfiles/"..v2["OnlineProfileName"], true)))
 					GuiLibrary["Profiles"][v2["ProfileName"]] = {["Keybind"] = "", ["Selected"] = false}
 					local profiles = {}
 					for i,v in pairs(GuiLibrary["Profiles"]) do 
@@ -683,15 +675,18 @@ OnlineProfilesExitButton.MouseButton1Click:connect(function()
 end)
 
 GUI.CreateDivider()
+---GUI.CreateCustomButton("Favorites", "vape/assets/FavoritesListIcon.png", UDim2.new(0, 17, 0, 14), function() end, function() end)
+--GUI.CreateCustomButton("Text GUIVertical", "vape/assets/TextGUIIcon3.png", UDim2.new(1, -56, 0, 15), function() end, function() end)
 local TextGui = GuiLibrary.CreateCustomWindow({
 	["Name"] = "Text GUI", 
-	["Icon"] = "Nemo/assets/TextGUIIcon1.png", 
+	["Icon"] = "vape/assets/TextGUIIcon1.png", 
 	["IconSize"] = 21
 })
 local TextGuiCircleObject = {["CircleList"] = {}}
+--GUI.CreateCustomButton("Text GUI", "vape/assets/TextGUIIcon2.png", UDim2.new(1, -23, 0, 15), function() TextGui.SetVisible(true) end, function() TextGui.SetVisible(false) end, "OptionsButton")
 GUI.CreateCustomToggle({
 	["Name"] = "Text GUI", 
-	["Icon"] = "Nemo/assets/TextGUIIcon3.png",
+	["Icon"] = "vape/assets/TextGUIIcon3.png",
 	["Function"] = function(callback) TextGui.SetVisible(callback) end,
 	["Priority"] = 2
 })	
@@ -713,7 +708,7 @@ onething.BackgroundColor3 = Color3.new(0, 0, 0)
 onething.BorderSizePixel = 0
 onething.BackgroundTransparency = 1
 onething.Visible = false
-onething.Image = getcustomassetfunc(translatedlogo and "Nemo/translations/"..GuiLibrary["Language"].."/vapeLogo3.png" or "Nemo/assets/VapeLogo3.png")
+onething.Image = getcustomassetfunc(translatedlogo and "vape/translations/"..GuiLibrary["Language"].."/VapeLogo3.png" or "vape/assets/VapeLogo3.png")
 local onething2 = Instance.new("ImageLabel")
 onething2.Parent = onething
 onething2.Size = UDim2.new(0, 41, 0, 24)
@@ -722,7 +717,7 @@ onething2.Position = UDim2.new(1, 0, 0, 1)
 onething2.BorderSizePixel = 0
 onething2.BackgroundColor3 = Color3.new(0, 0, 0)
 onething2.BackgroundTransparency = 1
-onething2.Image = getcustomassetfunc("Nemo/assets/VapeLogo4.png")
+onething2.Image = getcustomassetfunc("vape/assets/VapeLogo4.png")
 local onething3 = onething:Clone()
 onething3.ImageColor3 = Color3.new(0, 0, 0)
 onething3.ImageTransparency = 0.5
@@ -733,6 +728,9 @@ onething3.Parent = onething
 onething3.Logo2.ImageColor3 = Color3.new(0, 0, 0)
 onething3.Logo2.ZIndex = 0
 onething3.Logo2.ImageTransparency = 0.5
+local onethinggrad = Instance.new("UIGradient")
+onethinggrad.Rotation = 90
+onethinggrad.Parent = onething
 local onetext = Instance.new("TextLabel")
 onetext.Parent = TextGui.GetCustomChildren()
 onetext.Size = UDim2.new(1, 0, 1, 0)
@@ -981,7 +979,11 @@ TextGui.CreateToggle({
 		onething.Visible = callback
 		UpdateHud()
 	end,
-	["HoverText"] = "Renders a Nemo watermark"
+	["HoverText"] = "Renders a vape watermark"
+})
+local textguigradient = TextGui.CreateToggle({
+	["Name"] = "Gradient Logo",
+	["Function"] = function() end
 })
 textguirenderbkg = TextGui.CreateToggle({
 	["Name"] = "Render background", 
@@ -1028,49 +1030,30 @@ CustomText = TextGui.CreateTextBox({
 CustomText["Object"].Visible = false
 
 local healthColorToPosition = {
-	[Vector3.new(Color3.fromRGB(255, 28, 0).r,
-		Color3.fromRGB(255, 28, 0).g,
-		Color3.fromRGB(255, 28, 0).b)] = 0.1;
-	[Vector3.new(Color3.fromRGB(250, 235, 0).r,
-		Color3.fromRGB(250, 235, 0).g,
-		Color3.fromRGB(250, 235, 0).b)] = 0.5;
-	[Vector3.new(Color3.fromRGB(27, 252, 107).r,
-		Color3.fromRGB(27, 252, 107).g,
-		Color3.fromRGB(27, 252, 107).b)] = 0.8;
+	[0.01] = Color3.fromRGB(255, 28, 0);
+	[0.5] = Color3.fromRGB(250, 235, 0);
+	[0.99] = Color3.fromRGB(27, 252, 107);
 }
-local min = 0.1
-local minColor = Color3.fromRGB(255, 28, 0)
-local max = 0.8
-local maxColor = Color3.fromRGB(27, 252, 107)
 
 local function HealthbarColorTransferFunction(healthPercent)
-	if healthPercent < min then
-		return minColor
-	elseif healthPercent > max then
-		return maxColor
-	end
-
-
-	local numeratorSum = Vector3.new(0,0,0)
-	local denominatorSum = 0
-	for colorSampleValue, samplePoint in pairs(healthColorToPosition) do
-		local distance = healthPercent - samplePoint
-		if distance == 0 then
-
-			return Color3.new(colorSampleValue.x, colorSampleValue.y, colorSampleValue.z)
+	healthPercent = math.clamp(healthPercent, 0.01, 0.99)
+	local lastcolor = Color3.new(1, 1, 1)
+	for samplePoint, colorSampleValue in pairs(healthColorToPosition) do
+		local distance = (healthPercent / samplePoint)
+		if distance == 1 then
+			return colorSampleValue
+		elseif distance < 1 then 
+			return lastcolor:lerp(colorSampleValue, distance)
 		else
-			local wi = 1 / (distance*distance)
-			numeratorSum = numeratorSum + wi * colorSampleValue
-			denominatorSum = denominatorSum + wi
+			lastcolor = colorSampleValue
 		end
 	end
-	local result = numeratorSum / denominatorSum
-	return Color3.new(result.x, result.y, result.z)
+	return lastcolor
 end
 
 local TargetInfo = GuiLibrary.CreateCustomWindow({
 	["Name"] = "Target Info",
-	["Icon"] = "Nemo/assets/TargetInfoIcon1.png",
+	["Icon"] = "vape/assets/TargetInfoIcon1.png",
 	["IconSize"] = 16
 })
 local TargetInfoDisplayNames = TargetInfo.CreateToggle({
@@ -1184,7 +1167,7 @@ shared.VapeTargetInfo = {
 }
 GUI.CreateCustomToggle({
 	["Name"] = "Target Info", 
-	["Icon"] = "Nemo/assets/TargetInfoIcon2.png", 
+	["Icon"] = "vape/assets/TargetInfoIcon2.png", 
 	["Function"] = function(callback) TargetInfo.SetVisible(callback) end,
 	["Priority"] = 1
 })
@@ -1269,14 +1252,20 @@ local tabcategorycolor = {
 GuiLibrary["UpdateUI"] = function()
 	pcall(function()
 		GuiLibrary["ObjectsThatCanBeSaved"]["GUIWindow"]["Object"].Logo1.Logo2.ImageColor3 = Color3.fromHSV(GuiLibrary["Settings"]["GUIObject"]["Color"], 0.7, 0.9)
-		onething.ImageColor3 = Color3.fromHSV(GuiLibrary["Settings"]["GUIObject"]["Color"], 0.7, 0.9)
-		onetext.TextColor3 = Color3.fromHSV(GuiLibrary["Settings"]["GUIObject"]["Color"], 0.7, 0.9)
-		onecustomtext.TextColor3 = Color3.fromHSV(GuiLibrary["Settings"]["GUIObject"]["Color"], 0.7, 0.9)
+		--onething.ImageColor3 = Color3.fromHSV(GuiLibrary["Settings"]["GUIObject"]["Color"], 0.7, 0.9)
+		local rainbowcolor2 = GuiLibrary["Settings"]["GUIObject"]["Color"] + (GuiLibrary["ObjectsThatCanBeSaved"]["Gui ColorSliderColor"]["Api"]["RainbowValue"] and (-0.05) or 0)
+		rainbowcolor2 = rainbowcolor2 % 1
+		onethinggrad.Color = ColorSequence.new({
+			ColorSequenceKeypoint.new(0, Color3.fromHSV(GuiLibrary["Settings"]["GUIObject"]["Color"], 1, 1)),
+			ColorSequenceKeypoint.new(1, Color3.fromHSV(textguigradient["Enabled"] and rainbowcolor2 or GuiLibrary["Settings"]["GUIObject"]["Color"], 1, 1))
+		})
+		onetext.TextColor3 = Color3.fromHSV(textguigradient["Enabled"] and rainbowcolor2 or GuiLibrary["Settings"]["GUIObject"]["Color"], 0.7, 0.9)
+		onecustomtext.TextColor3 = Color3.fromHSV(textguigradient["Enabled"] and rainbowcolor2 or GuiLibrary["Settings"]["GUIObject"]["Color"], 0.7, 0.9)
 		local newtext = ""
 		local newfirst = false
 		local colorforindex = {}
 		for i2,v2 in pairs(textwithoutthing:split("\n")) do
-			local rainbowcolor = GuiLibrary["Settings"]["GUIObject"]["Color"] + (GuiLibrary["ObjectsThatCanBeSaved"]["Gui ColorSliderColor"]["Api"]["RainbowValue"] and (-0.025 * i2) or 0)
+			local rainbowcolor = GuiLibrary["Settings"]["GUIObject"]["Color"] + (GuiLibrary["ObjectsThatCanBeSaved"]["Gui ColorSliderColor"]["Api"]["RainbowValue"] and (-0.025 * (i2 + (textguigradient["Enabled"] and 2 or 0))) or 0)
 			rainbowcolor = rainbowcolor % 1
 			local newcolor = Color3.fromHSV(rainbowcolor, 0.7, 0.9)
 			local splittext = v2:split(":")
@@ -1451,7 +1440,16 @@ local GUIbind = GUI.CreateGUIBind()
 
 local teleportfunc = game:GetService("Players").LocalPlayer.OnTeleport:Connect(function(State)
 	if State == Enum.TeleportState.Started and not shared.VapeIndependent then
-		local teleportstr = 'shared.VapeSwitchServers = true if shared.VapeDeveloper then loadstring(readfile("Nemo/NewMainScript.lua"))() else loadstring(game:HttpGet("https://raw.githubusercontent.com/randomdude11135/Nemo/main/NewMainScript.lua", true))() end'
+		local teleportstr = 'shared.VapeSwitchServers = true if shared.VapeDeveloper then loadstring(readfile("vape/NewMainScript.lua"))() else loadstring(game:HttpGet("https://raw.githubusercontent.com/7GrandDadPGN/VapeV4ForRoblox/main/NewMainScript.lua", true))() end'
+		if shared.VapeDeveloper then
+			teleportstr = 'shared.VapeDeveloper = true '..teleportstr
+		end
+		if shared.VapePrivate then
+			teleportstr = 'shared.VapePrivate = true '..teleportstr
+		end
+		if shared.VapeCustomProfile then 
+			teleportstr = "shared.VapeCustomProfile = '"..shared.VapeCustomProfile.."'"..teleportstr
+		end
 		GuiLibrary["SaveSettings"]()
 		queueteleport(teleportstr)
 	end
@@ -1504,8 +1502,11 @@ GUISettings.CreateButton2({
 	["Name"] = "RESET GUI POSITIONS", 
 	["Function"] = function()
 		for i,v in pairs(GuiLibrary["ObjectsThatCanBeSaved"]) do
-			if (v["Type"] == "Window" or v["Type"] == "CustomWindow") and GuiLibrary["findObjectInTable"](GuiLibrary["ObjectsThatCanBeSaved"], i) then
-				v["Object"].Position = (i == "GUIWindow" and UDim2.new(0, 6, 0, 6) or UDim2.new(0, 223, 0, 6))
+			local obj = GuiLibrary["ObjectsThatCanBeSaved"][i]
+			if obj then
+				if (v["Type"] == "Window" or v["Type"] == "CustomWindow") then
+					v["Object"].Position = (i == "GUIWindow" and UDim2.new(0, 6, 0, 6) or UDim2.new(0, 223, 0, 6))
+				end
 			end
 		end
 	end
@@ -1531,9 +1532,12 @@ GUISettings.CreateButton2({
 		local storedpos = {}
 		local num = 6
 		for i,v in pairs(GuiLibrary["ObjectsThatCanBeSaved"]) do
-			if v["Type"] == "Window" and GuiLibrary["findObjectInTable"](GuiLibrary["ObjectsThatCanBeSaved"], i) and v["Object"].Visible then
-				local sortordernum = (sortordertable[i] or #sorttable)
-				sorttable[sortordernum] = v["Object"]
+			local obj = GuiLibrary["ObjectsThatCanBeSaved"][i]
+			if obj then
+				if v["Type"] == "Window" and v["Object"].Visible then
+					local sortordernum = (sortordertable[i] or #sorttable)
+					sorttable[sortordernum] = v["Object"]
+				end
 			end
 		end
 		for i2,v2 in pairs(sorttable) do
@@ -1560,7 +1564,7 @@ GeneralSettings.CreateButton2({
 if shared.VapeIndependent then
 	spawn(function()
 		repeat task.wait() until shared.VapeManualLoad
-		GuiLibrary["LoadSettings"]()
+		GuiLibrary["LoadSettings"](shared.VapeCustomProfile)
 		if #ProfilesTextList["ObjectList"] == 0 then
 			table.insert(ProfilesTextList["ObjectList"], "default")
 			ProfilesTextList["RefreshValues"](ProfilesTextList["ObjectList"])
@@ -1571,7 +1575,7 @@ if shared.VapeIndependent then
 		if not shared.VapeSwitchServers then
 			if blatantmode["Enabled"] then
 				pcall(function()
-					local frame = GuiLibrary["CreateNotification"]("Blatant Enabled", "Nemo is now in Blatant Mode.", 5.5, "assets/WarningNotification.png")
+					local frame = GuiLibrary["CreateNotification"]("Blatant Enabled", "Vape is now in Blatant Mode.", 5.5, "assets/WarningNotification.png")
 					frame.Frame.Frame.ImageColor3 = Color3.fromRGB(236, 129, 44)
 				end)
 			end
@@ -1590,16 +1594,17 @@ if shared.VapeIndependent then
 	shared.VapeFullyLoaded = true
 	return GuiLibrary
 else
-	loadstring(GetURL("AnyGame.Lua"))()
-	if betterisfile("Nemo/GameModules/"..game.PlaceId..".Lua") then
-		loadstring(readfile("Nemo/GameModules/"..game.PlaceId..".Lua"))()
+	loadstring(GetURL("AnyGame.vape"))()
+	if betterisfile("vape/CustomModules/"..game.PlaceId..".vape") then
+		loadstring(readfile("vape/CustomModules/"..game.PlaceId..".Lua"))()
 	else
 		local publicrepo = checkpublicrepo(game.PlaceId)
 		if publicrepo then
 			loadstring(publicrepo)()
 		end
 	end
-	GuiLibrary["LoadSettings"]()
+	
+	GuiLibrary["LoadSettings"](shared.VapeCustomProfile)
 	local profiles = {}
 	for i,v in pairs(GuiLibrary["Profiles"]) do 
 		table.insert(profiles, i)
