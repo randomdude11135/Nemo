@@ -22,12 +22,12 @@ local betterisfile = function(file)
 end
 local function GetURL(scripturl)
 	if shared.VapeDeveloper then
-		if not betterisfile("Nemo/"..scripturl) then
-			error("File not found : Nemo/"..scripturl)
+		if not betterisfile("vape/"..scripturl) then
+			error("File not found : vape/"..scripturl)
 		end
-		return readfile("Nemo/"..scripturl)
+		return readfile("vape/"..scripturl)
 	else
-		local res = game:HttpGet("https://raw.githubusercontent.com/randomdude11135/Nemo/main/"..scripturl, true)
+		local res = game:HttpGet("https://raw.githubusercontent.com/7GrandDadPGN/VapeV4ForRoblox/main/"..scripturl, true)
 		assert(res ~= "404: Not Found", "File not found")
 		return res
 	end
@@ -51,30 +51,45 @@ local queueteleport = syn and syn.queue_on_teleport or queue_on_teleport or flux
 local getasset = getsynasset or getcustomasset or function(location) return "rbxasset://"..location end
 local entity = loadstring(GetURL("Libraries/entityHandler.lua"))()
 
-local RenderStepTable = {}
-local StepTable = {}
+local RunLoops = {RenderStepTable = {}, StepTable = {}, HeartTable = {}}
+do
+	function RunLoops:BindToRenderStep(name, num, func)
+		if RunLoops.RenderStepTable[name] == nil then
+			RunLoops.RenderStepTable[name] = game:GetService("RunService").RenderStepped:connect(func)
+		end
+	end
 
-local function BindToRenderStep(name, num, func)
-	if RenderStepTable[name] == nil then
-		RenderStepTable[name] = game:GetService("RunService").RenderStepped:connect(func)
+	function RunLoops:UnbindFromRenderStep(name)
+		if RunLoops.RenderStepTable[name] then
+			RunLoops.RenderStepTable[name]:Disconnect()
+			RunLoops.RenderStepTable[name] = nil
+		end
 	end
-end
-local function UnbindFromRenderStep(name)
-	if RenderStepTable[name] then
-		RenderStepTable[name]:Disconnect()
-		RenderStepTable[name] = nil
-	end
-end
 
-local function BindToStepped(name, num, func)
-	if StepTable[name] == nil then
-		StepTable[name] = game:GetService("RunService").Stepped:connect(func)
+	function RunLoops:BindToStepped(name, num, func)
+		if RunLoops.StepTable[name] == nil then
+			RunLoops.StepTable[name] = game:GetService("RunService").Stepped:connect(func)
+		end
 	end
-end
-local function UnbindFromStepped(name)
-	if StepTable[name] then
-		StepTable[name]:Disconnect()
-		StepTable[name] = nil
+
+	function RunLoops:UnbindFromStepped(name)
+		if RunLoops.StepTable[name] then
+			RunLoops.StepTable[name]:Disconnect()
+			RunLoops.StepTable[name] = nil
+		end
+	end
+
+	function RunLoops:BindToHeartbeat(name, num, func)
+		if RunLoops.HeartTable[name] == nil then
+			RunLoops.HeartTable[name] = game:GetService("RunService").Heartbeat:connect(func)
+		end
+	end
+
+	function RunLoops:UnbindFromHeartbeat(name)
+		if RunLoops.HeartTable[name] then
+			RunLoops.HeartTable[name]:Disconnect()
+			RunLoops.HeartTable[name] = nil
+		end
 	end
 end
 
@@ -119,7 +134,7 @@ local function getcustomassetfunc(path)
 			textlabel:Remove()
 		end)
 		local req = requestfunc({
-			Url = "https://raw.githubusercontent.com/randomdude11135/Nemo/main/"..path:gsub("Nemo/assets", "assets"),
+			Url = "https://raw.githubusercontent.com/7GrandDadPGN/VapeV4ForRoblox/main/"..path:gsub("vape/assets", "assets"),
 			Method = "GET"
 		})
 		writefile(path, req.Body)
@@ -131,21 +146,8 @@ shared.vapeteamcheck = function(plr)
 	return (GuiLibrary["ObjectsThatCanBeSaved"]["Teams by colorToggle"]["Api"]["Enabled"] and (plr.Team ~= lplr.Team or (lplr.Team == nil or #lplr.Team:GetPlayers() == #players:GetChildren())) or GuiLibrary["ObjectsThatCanBeSaved"]["Teams by colorToggle"]["Api"]["Enabled"] == false)
 end
 
-local function targetCheck(plr, check)
-	if not check then
-		return true
-	end
-	local check2 = true
-	if check2 then
-		check = plr.Character ~= nil
-	end
-	if check2 then
-		check2 = plr.Character.Humanoid.GetState(plr.Character.Humanoid) ~= Enum.HumanoidStateType.Dead
-	end
-	if check2 then
-		check2 = plr.Character.FindFirstChild(plr.Character, "ForceField") == nil
-	end
-	return check2
+local function targetCheck(plr)
+	return plr and plr.Humanoid.Health > 0 and plr.Character:FindFirstChild("ForceField") == nil
 end
 
 do
@@ -158,15 +160,12 @@ do
 	entity.fullEntityRefresh()
 end
 
-local function isAlive(plr)
+local function isAlive(plr, alivecheck)
 	if plr then
-		return plr and plr.Character and plr.Character.Parent ~= nil and plr.Character:FindFirstChild("HumanoidRootPart") and plr.Character:FindFirstChild("Head") and plr.Character:FindFirstChild("Humanoid")
+		local ind, tab = entity.getEntityFromPlayer(plr)
+		return ((not alivecheck) or tab and tab.Humanoid:GetState() ~= Enum.HumanoidStateType.Dead) and tab
 	end
-	return lplr and lplr.Character and lplr.Character.Parent ~= nil and lplr.Character:FindFirstChild("HumanoidRootPart") and lplr.Character:FindFirstChild("Head") and lplr.Character:FindFirstChild("Humanoid")
-end
-
-local function isPlayerTargetable(plr, target, friend)
-	return plr ~= lplr and plr and (friend and friendCheck(plr) == nil or (not friend)) and isAlive(plr) and targetCheck(plr, target) and shared.vapeteamcheck(plr)
+	return entity.isAlive
 end
 
 local function vischeck(char, part, ignorelist)
@@ -174,7 +173,7 @@ local function vischeck(char, part, ignorelist)
 	rayparams.FilterDescendantsInstances = {lplr.Character, char, cam, table.unpack(ignorelist or {})}
 	local ray = workspace.Raycast(workspace, cam.CFrame.p, CFrame.lookAt(cam.CFrame.p, char[part].Position).lookVector.Unit * (cam.CFrame.p - char[part].Position).Magnitude, rayparams)
 	return not ray
-	--	local unpacked = unpack(cam.GetPartsObscuringTarget(cam, {lplr.Character[part].Position, char[part].Position}, {lplr.Character, char, cam, table.unpack(ignorelist or {})}))
+--	local unpacked = unpack(cam.GetPartsObscuringTarget(cam, {lplr.Character[part].Position, char[part].Position}, {lplr.Character, char, cam, table.unpack(ignorelist or {})}))
 	--return not unpacked
 end
 
@@ -185,19 +184,19 @@ end
 local function GetAllNearestHumanoidToPosition(player, distance, amount, checkvis, vistab)
 	local returnedplayer = {}
 	local currentamount = 0
-	if entity.isAlive then
+    if entity.isAlive then
 		for i, v in pairs(entity.entityList) do -- loop through players
-			if (targetcheck == nil and v.Targetable or targetcheck) and targetCheck(v, true) and currentamount < amount then -- checks
+            if (targetcheck or v.Targetable) and targetCheck(v) and currentamount < amount then -- checks
 				if checkvis then
 					if not vischeck(v.Character, "Head", vistab) then continue end
 				end
-				local mag = (entity.character.HumanoidRootPart.Position - v.Character.HumanoidRootPart.Position).magnitude
-				if mag <= distance then -- mag check
-					table.insert(returnedplayer, v)
+                local mag = (entity.character.HumanoidRootPart.Position - v.RootPart.Position).magnitude
+                if mag <= distance then -- mag check
+                    table.insert(returnedplayer, v)
 					currentamount = currentamount + 1
-				end
-			end
-		end
+                end
+            end
+        end
 	end
 	return returnedplayer
 end
@@ -206,39 +205,39 @@ local function GetNearestHumanoidToPosition(player, distance, checkvis, vistab)
 	local closest, returnedplayer, targetpart = distance, nil, nil
 	if entity.isAlive then
 		for i, v in pairs(entity.entityList) do -- loop through players
-			if (targetcheck == nil and v.Targetable or targetcheck) and targetCheck(v, true) then -- checks
+            if (targetcheck or v.Targetable) and targetCheck(v) then -- checks
 				if checkvis then
 					if not vischeck(v.Character, "Head", vistab) then continue end
 				end
-				local mag = (entity.character.HumanoidRootPart.Position - v.Character.HumanoidRootPart.Position).magnitude
-				if mag <= closest then -- mag check
-					closest = mag
+                local mag = (entity.character.HumanoidRootPart.Position - v.RootPart.Position).magnitude
+                if mag <= closest then -- mag check
+                    closest = mag
 					returnedplayer = v
-				end
-			end
-		end
+                end
+            end
+        end
 	end
 	return returnedplayer
 end
 
 local function GetNearestHumanoidToMouse(player, distance, checkvis, ignorelist)
-	local closest, returnedplayer = distance, nil
-	if entity.isAlive then
+    local closest, returnedplayer = distance, nil
+    if entity.isAlive then
 		for i, v in pairs(entity.entityList) do -- loop through players
-			if (targetcheck == nil and v.Targetable or targetcheck) and targetCheck(v, true) then -- checks
+            if (targetcheck or v.Targetable) and targetCheck(v) then -- checks
 				if checkvis then
 					if not vischeck(v.Character, "HumanoidRootPart") then continue end
 				end
-				local vec, vis = cam.WorldToScreenPoint(cam, v.Character.HumanoidRootPart.Position)
+                local vec, vis = cam.WorldToScreenPoint(cam, v.RootPart.Position)
 				local mag = (uis.GetMouseLocation(uis) - Vector2.new(vec.X, vec.Y)).magnitude
-				if vis and mag <= closest then -- mag check
-					closest = mag
+                if vis and mag <= closest then -- mag check
+                    closest = mag
 					returnedplayer = v
-				end
-			end
-		end
-	end
-	return returnedplayer
+                end
+            end
+        end
+    end
+    return returnedplayer
 end
 
 local function CalculateObjectPosition(pos)
@@ -266,7 +265,7 @@ local radarcam = Instance.new("Camera")
 radarcam.FieldOfView = 45
 local Radar = GuiLibrary.CreateCustomWindow({
 	["Name"] = "Radar", 
-	["Icon"] = "Nemo/assets/RadarIcon1.png",
+	["Icon"] = "vape/assets/RadarIcon1.png",
 	["IconSize"] = 16
 })
 local RadarColor = Radar.CreateColorSlider({
@@ -323,16 +322,16 @@ players.PlayerRemoving:connect(function(plr)
 end)
 GuiLibrary["ObjectsThatCanBeSaved"]["GUIWindow"]["Api"].CreateCustomToggle({
 	["Name"] = "Radar", 
-	["Icon"] = "Nemo/assets/RadarIcon2.png", 
+	["Icon"] = "vape/assets/RadarIcon2.png", 
 	["Function"] = function(callback)
 		Radar.SetVisible(callback) 
 		if callback then
-			BindToRenderStep("Radar", 1, function() 
+			RunLoops:BindToRenderStep("Radar", 1, function() 
 				local v278 = (CFrame.new(0, 0, 0):inverse() * cam.CFrame).p * 0.2 * Vector3.new(1, 1, 1);
 				local v279, v280, v281 = cam.CFrame:ToOrientation();
 				local u90 = v280 * 180 / math.pi;
 				local v277 = 0 - u90;
-				local v276 = v278 + Vector3.new(0, 0, 0);
+				local v276 = v278 + Vector3.new();
 				radarcam.CFrame = CFrame.new(v276 + Vector3.new(0, 50, 0)) * CFrame.Angles(0, -v277 * (math.pi / 180), 0) * CFrame.Angles(-90 * (math.pi / 180), 0, 0)
 				for i,plr in pairs(players:GetChildren()) do
 					local thing
@@ -352,9 +351,10 @@ GuiLibrary["ObjectsThatCanBeSaved"]["GUIWindow"]["Api"].CreateCustomToggle({
 						thing.Name = plr.Name
 						thing.Parent = RadarMainFrame
 					end
-
-					if isPlayerTargetable(plr, false, false) then
-						local v238, v239 = radarcam:WorldToViewportPoint((CFrame.new(0, 0, 0):inverse() * plr.Character.HumanoidRootPart.CFrame).p * 0.2)
+					
+					local aliveplr = isAlive(plr)
+					if aliveplr then
+						local v238, v239 = radarcam:WorldToViewportPoint((CFrame.new(0, 0, 0):inverse() * aliveplr.RootPart.CFrame).p * 0.2)
 						thing.Visible = true
 						thing.BackgroundColor3 = getPlayerColor(plr) or Color3.fromHSV(RadarColor["Hue"], RadarColor["Sat"], RadarColor["Value"])
 						thing.Position = UDim2.new(math.clamp(v238.X, 0.03, 0.97), -2, math.clamp(v238.Y, 0.03, 0.97), -2)
@@ -362,7 +362,7 @@ GuiLibrary["ObjectsThatCanBeSaved"]["GUIWindow"]["Api"].CreateCustomToggle({
 				end
 			end)
 		else
-			UnbindFromRenderStep("Radar")
+			RunLoops:UnbindFromRenderStep("Radar")
 			RadarMainFrame:ClearAllChildren()
 		end
 	end, 
@@ -379,9 +379,9 @@ local function Cape(char, texture)
 	local hum = char:WaitForChild("Humanoid")
 	local torso = nil
 	if hum.RigType == Enum.HumanoidRigType.R15 then
-		torso = char:WaitForChild("UpperTorso")
+	torso = char:WaitForChild("UpperTorso")
 	else
-		torso = char:WaitForChild("Torso")
+	torso = char:WaitForChild("Torso")
 	end
 	local p = Instance.new("Part", torso.Parent)
 	p.Name = "Cape"
@@ -428,6 +428,7 @@ local function Cape(char, texture)
 	until not p or p.Parent ~= torso.Parent
 end
 
+local mousefunctions = mouse1release and mouse1press and (isrbxactive or iswindowactive) and true or false
 runcode(function()
 	local aimfov = {["Value"] = 1}
 	local aimfovshow = {["Enabled"] = false}
@@ -516,24 +517,24 @@ runcode(function()
 							if table.find(list, tostring(calling)) then
 								return oldnamecall(self, ...)
 							else
-								--	print("SilentAim ["..NamecallMethod.."]: "..tostring(calling))
+							--	print("SilentAim ["..NamecallMethod.."]: "..tostring(calling))
 								if aimtable[aimmethod["Value"]] == 1 then
 									if type(Args[2]) == "table" then
-										--	local str = "{"
-										--	for i,v in pairs(Args[2]) do 
+									--	local str = "{"
+									--	for i,v in pairs(Args[2]) do 
 										--	str = str..tostring(v)..(#Args[2] == i and "}" or ", ")
 										--end
-										--	print("FilterInstances ["..#Args[2].."]: "..str)
+									--	print("FilterInstances ["..#Args[2].."]: "..str)
 									end
 								elseif aimtable[aimmethod["Value"]] == 2 then
 									if aimmethodmode["Value"] ~= "All" and aimmethodmode["Value"] ~= Args[3].FilterType.Name then
 										return oldnamecall(self, ...)
 									else
-										--	local str = "{"
-										--	for i,v in pairs(Args[3].FilterDescendantsInstances) do 
-										--		str = str..tostring(v)..(#Args[3].FilterDescendantsInstances == i and "}" or ", ")
-										--	end
-										--	print("FilterInstances ["..#Args[3].FilterDescendantsInstances.."]: "..str)
+									--	local str = "{"
+									--	for i,v in pairs(Args[3].FilterDescendantsInstances) do 
+									--		str = str..tostring(v)..(#Args[3].FilterDescendantsInstances == i and "}" or ", ")
+									--	end
+									--	print("FilterInstances ["..#Args[3].FilterDescendantsInstances.."]: "..str)
 										--print("FilterType: "..Args[3].FilterType.Name)
 									end
 								end
@@ -550,16 +551,16 @@ runcode(function()
 						end
 						recentlyshotplr = plr
 						recentlyshottick = tick() + 3
-						local tar = (math.floor(Random.new().NextNumber(Random.new(), 0, 1) * 100)) <= aimheadshotchance["Value"] and plr.Character.Head or plr.Character.HumanoidRootPart
+						local tar = (math.floor(Random.new().NextNumber(Random.new(), 0, 1) * 100)) <= aimheadshotchance["Value"] and plr.Head or plr.RootPart
 						if aimtable[aimmethod["Value"]] == 1 then
-							local mag = (Vector3.new(0, 0, 0) - Args[1].Direction).Magnitude
+							local mag = (Vector3.new() - Args[1].Direction).Magnitude
 							local direction = CFrame.lookAt(Args[1].Origin, tar.Position).lookVector * mag
 							Args[1] = Ray.new(Args[1].Origin, direction)
 							if aimwallbang["Enabled"] then
 								return tar, tar.Position, direction, tar.Material
 							end
 						elseif aimtable[aimmethod["Value"]] == 2 then
-							local mag = (Vector3.new(0, 0, 0) - Args[2]).Magnitude
+							local mag = (Vector3.new() - Args[2]).Magnitude
 							local direction = CFrame.lookAt(Args[1], tar.Position).lookVector * mag
 							Args[2] = direction
 							if aimwallbang["Enabled"] then
@@ -648,7 +649,7 @@ runcode(function()
 					end
 				end)]]
 			else
-				--	UnbindFromRenderStep("AimAssist") 
+			--	UnbindFromRenderStep("AimAssist") 
 				tar = nil 
 			end
 		end,
@@ -817,8 +818,8 @@ runcode(function()
 		if ray and ray.Instance then
 			for i,v in pairs(entity.entityList) do 
 				if v.Targetable and v.Character then
-					if ray.Instance:FindFirstAncestor(v.Character.Name) then
-						return targetCheck(v, true) and v or nil
+					if ray.Instance:IsDescendantOf(v.Character) then
+						return targetCheck(v) and v or nil
 					end
 				end
 			end
@@ -833,36 +834,45 @@ runcode(function()
 		["Name"] = "TriggerBot",
 		["Function"] = function(callback)
 			if callback then
-				BindToStepped("TriggerBot", 1, function()
-					local plr = gettriggerbotplr()
-					if plr then
-						if mouse1click and (isrbxactive and isrbxactive() or iswindowactive and iswindowactive()) and shoottime <= tick() then
-							if isNotHoveringOverGui() and GuiLibrary["MainGui"]:FindFirstChild("ScaledGui") and GuiLibrary["MainGui"].ScaledGui.ClickGui.Visible == false and uis:GetFocusedTextBox() == nil then
-								if pressed then
-									mouse1release()
+				if mousefunctions then
+					RunLoops:BindToStepped("TriggerBot", 1, function()
+						local plr = gettriggerbotplr()
+						if plr then
+							if (isrbxactive or iswindowactive)() and shoottime <= tick() then
+								if isNotHoveringOverGui() and GuiLibrary["MainGui"]:FindFirstChild("ScaledGui") and GuiLibrary["MainGui"].ScaledGui.ClickGui.Visible == false and uis:GetFocusedTextBox() == nil then
+									if pressed then
+										mouse1release()
+									else
+										mouse1press()
+									end
+									pressed = not pressed
+									shoottime = tick() + 0.01
 								else
-									mouse1press()
+									if pressed then
+										mouse1release()
+									end
+									pressed = false
 								end
-								pressed = not pressed
-								shoottime = tick() + 0.01
-							else
-								if pressed then
-									mouse1release()
-								end
-								pressed = false
 							end
+						else
+							if pressed and mousefunctions then
+								mouse1release()
+							end
+							pressed = false
 						end
-					else
-						if pressed then
-							mouse1release()
-						end
-						pressed = false
+					end)
+				else
+					createwarning("TriggerBot", "Mouse functions missing", 5)
+					if triggerbot["Enabled"] then
+						triggerbot["ToggleButton"](false)
 					end
-				end)
+				end
 			else 
-				UnbindFromStepped("TriggerBot")
-				if pressed then
-					mouse1release()
+				if mousefunctions then 
+					RunLoops:UnbindFromStepped("TriggerBot")
+					if pressed then
+						mouse1release()
+					end
 				end
 				pressed = false
 			end
@@ -878,7 +888,7 @@ autoclicker = GuiLibrary["ObjectsThatCanBeSaved"]["CombatWindow"]["Api"].CreateO
 	["Name"] = "AutoClicker", 
 	["Function"] = function(callback)
 		if callback then
-			BindToRenderStep("AutoClicker", 1, function() 
+			RunLoops:BindToRenderStep("AutoClicker", 1, function() 
 				if entity.isAlive and autoclickertick <= tick() then
 					if autoclickermode["Value"] == "Sword" then
 						local tool = lplr and lplr.Character and lplr.Character:FindFirstChildWhichIsA("Tool")
@@ -887,13 +897,13 @@ autoclicker = GuiLibrary["ObjectsThatCanBeSaved"]["CombatWindow"]["Api"].CreateO
 							autoclickertick = tick() + (1 / autoclickercps["GetRandomValue"]()) * Random.new().NextNumber(Random.new(), 0.75, 1)
 						end
 					else
-						if mouse1click then
-							if (isrbxactive and isrbxactive() or iswindowactive and iswindowactive()) and GuiLibrary["MainGui"].ScaledGui.ClickGui.Visible == false then
+						if mousefunctions then
+							if (isrbxactive or iswindowactive)() and GuiLibrary["MainGui"].ScaledGui.ClickGui.Visible == false then
 								mouse1click()
 								autoclickertick = tick() + (1 / autoclickercps["GetRandomValue"]()) * Random.new().NextNumber(Random.new(), 0.75, 1)
 							end
 						else
-							createwarning("AutoClicker", "Input Functions not found.", 5)
+							createwarning("AutoClicker", "Mouse functions missing", 5)
 							if autoclicker["Enabled"] then
 								autoclicker["ToggleButton"](false)
 							end
@@ -902,7 +912,7 @@ autoclicker = GuiLibrary["ObjectsThatCanBeSaved"]["CombatWindow"]["Api"].CreateO
 				end
 			end)
 		else
-			UnbindFromRenderStep("AutoClicker")
+			RunLoops:UnbindFromRenderStep("AutoClicker")
 		end
 	end
 })
@@ -925,7 +935,7 @@ local Reach = GuiLibrary["ObjectsThatCanBeSaved"]["CombatWindow"]["Api"].CreateO
 	["Name"] = "Reach", 
 	["Function"] = function(callback)
 		if callback then
-			BindToRenderStep("Reach", 1, function() 
+			RunLoops:BindToRenderStep("Reach", 1, function() 
 				local tool = lplr and lplr.Character and lplr.Character:FindFirstChildWhichIsA("Tool")
 				if tool and entity.isAlive then
 					local touch = findTouchInterest(tool)
@@ -941,7 +951,7 @@ local Reach = GuiLibrary["ObjectsThatCanBeSaved"]["CombatWindow"]["Api"].CreateO
 				end
 			end)
 		else
-			UnbindFromRenderStep("Reach")
+			RunLoops:UnbindFromRenderStep("Reach")
 			for i2,v2 in pairs(lplr.Character:GetChildren()) do
 				if v2:IsA("Tool") and rawget(oldsize, v2.Name) then
 					local touch = findTouchInterest(v2)
@@ -1015,9 +1025,9 @@ runcode(function()
 		["Name"] = "MouseTP", 
 		["Function"] = function(callback) 
 			if callback then
-				BindToStepped("MouseTP", 1, function()
+				RunLoops:BindToHeartbeat("MouseTP", 1, function()
 					if entity.isAlive and ClickTPVelocity["Enabled"] and ClickTPMethod["Value"] == "SlowTP" then 
-						entity.character.HumanoidRootPart.Velocity = Vector3.new(0, 0, 0)
+						entity.character.HumanoidRootPart.Velocity = Vector3.new()
 					end
 				end)
 				if entity.isAlive then 
@@ -1030,9 +1040,9 @@ runcode(function()
 							repeat
 								if entity.isAlive then 
 									local newpos = (selectedpos - entity.character.HumanoidRootPart.CFrame.p).Unit
-									newpos = newpos == newpos and newpos * (math.clamp((entity.character.HumanoidRootPart.CFrame.p - selectedpos).magnitude, 0, ClickTPAmount["Value"])) or Vector3.new(0, 0, 0)
+									newpos = newpos == newpos and newpos * (math.clamp((entity.character.HumanoidRootPart.CFrame.p - selectedpos).magnitude, 0, ClickTPAmount["Value"])) or Vector3.new()
 									entity.character.HumanoidRootPart.CFrame = entity.character.HumanoidRootPart.CFrame + Vector3.new(newpos.X, (ClickTPVertical["Enabled"] and newpos.Y or 0), newpos.Z)
-									entity.character.HumanoidRootPart.Velocity = Vector3.new(0, 0, 0)
+									entity.character.HumanoidRootPart.Velocity = Vector3.new()
 									if (entity.character.HumanoidRootPart.CFrame.p - selectedpos).magnitude <= 5 then 
 										break
 									end
@@ -1050,7 +1060,7 @@ runcode(function()
 					end
 				end
 			else
-				UnbindFromStepped("MouseTP")
+				RunLoops:UnbindFromHeartbeat("MouseTP")
 			end
 		end, 
 		["HoverText"] = "Teleports to where your mouse is."
@@ -1180,19 +1190,19 @@ runcode(function()
 				if flymethod["Value"] == "Jump" and entity.isAlive then
 					entity.character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
 				end
-				BindToStepped("Fly", 1, function(time, delta) 
+				RunLoops:BindToHeartbeat("Fly", 1, function(delta) 
 					if entity.isAlive then
 						entity.character.Humanoid.PlatformStand = flyplatformstanding["Enabled"]
 						if flyalivecheck == false then
 							flyposy = entity.character.HumanoidRootPart.CFrame.p.Y
 							flyalivecheck = true
 						end
-						local movevec = (flymovemethod["Value"] == "Manual" and (not (w or s or a or d)) and Vector3.new(0, 0, 0) or entity.character.Humanoid.MoveDirection).Unit
-						movevec = movevec == movevec and movevec or Vector3.new(0, 0, 0)
+						local movevec = (flymovemethod["Value"] == "Manual" and (not (w or s or a or d)) and Vector3.new() or entity.character.Humanoid.MoveDirection).Unit
+						movevec = movevec == movevec and movevec or Vector3.new()
 						if flymethod["Value"] == "Normal" then
 							if flyplatformstanding["Enabled"] then
 								entity.character.HumanoidRootPart.CFrame = CFrame.new(entity.character.HumanoidRootPart.CFrame.p, entity.character.HumanoidRootPart.CFrame.p + cam.CFrame.lookVector)
-								entity.character.HumanoidRootPart.RotVelocity = Vector3.new(0, 0, 0)
+								entity.character.HumanoidRootPart.RotVelocity = Vector3.new()
 							end
 							entity.character.HumanoidRootPart.Velocity = (movevec * flyspeed["Value"]) + Vector3.new(0, 0.85 + (flyup and flyverticalspeed["Value"] or 0) + (flydown and -flyverticalspeed["Value"] or 0), 0)
 						else
@@ -1207,7 +1217,7 @@ runcode(function()
 							if flywall["Enabled"] then
 								local raycastparameters = RaycastParams.new()
 								raycastparameters.FilterType = Enum.RaycastFilterType.Blacklist
-								raycastparameters.FilterDescendantsInstances = {lplr.Character}
+								raycastparameters.FilterDescendantsInstances = {lplr.Character, cam}
 								local ray = workspace:Raycast(entity.character.HumanoidRootPart.Position, flypos, raycastparameters)
 								if ray then flypos = (ray.Position - entity.character.HumanoidRootPart.Position) flyposy = entity.character.HumanoidRootPart.CFrame.p.Y end
 							end
@@ -1216,7 +1226,7 @@ runcode(function()
 								if flyplatformstanding["Enabled"] then
 									entity.character.HumanoidRootPart.CFrame = CFrame.new(entity.character.HumanoidRootPart.CFrame.p, entity.character.HumanoidRootPart.CFrame.p + cam.CFrame.lookVector)
 								end
-								entity.character.HumanoidRootPart.Velocity = Vector3.new(0, 0, 0)
+								entity.character.HumanoidRootPart.Velocity = Vector3.new()
 							else
 								entity.character.HumanoidRootPart.CFrame = entity.character.HumanoidRootPart.CFrame + Vector3.new(flypos.X, 0, flypos.Z)
 								if entity.character.HumanoidRootPart.Velocity.Y < -(entity.character.Humanoid.JumpPower - ((flyup and flyverticalspeed["Value"] or 0) - (flydown and flyverticalspeed["Value"] or 0))) then
@@ -1227,7 +1237,7 @@ runcode(function()
 						end
 						if flyplatform then
 							flyplatform.CFrame = (flymethod["Value"] == "Jump" and flyjumpcf or entity.character.HumanoidRootPart.CFrame * CFrame.new(0, -entity.character.Humanoid.HipHeight * 2, 0))
-							flyplatform.Velocity = Vector3.new(0, 0, 0)
+							flyplatform.Velocity = Vector3.new()
 							flyplatform.Parent = cam
 						end
 					else
@@ -1240,7 +1250,7 @@ runcode(function()
 				flyalivecheck = false
 				flypress:Disconnect()
 				flyendpress:Disconnect()
-				UnbindFromStepped("Fly")
+				RunLoops:UnbindFromHeartbeat("Fly")
 				if entity.isAlive then
 					entity.character.Humanoid.PlatformStand = false
 				end
@@ -1321,23 +1331,24 @@ local Hitbox =  GuiLibrary["ObjectsThatCanBeSaved"]["BlatantWindow"]["Api"].Crea
 	["Name"] = "HitBoxes", 
 	["Function"] = function(callback)
 		if callback then
-			BindToRenderStep("HitBoxes", 1, function() 
+			RunLoops:BindToRenderStep("HitBoxes", 1, function() 
 				for i,plr in pairs(entity.entityList) do
 					if plr.Targetable then
 						if hitboxoption["Value"] == "HumanoidRootPart" then
-							plr.Character.HumanoidRootPart.Size = Vector3.new(2 * (hitboxexpand["Value"] / 10), 2 * (hitboxexpand["Value"] / 10), 1 * (hitboxexpand["Value"] / 10))
+							plr.RootPart.Size = Vector3.new(2 * (hitboxexpand["Value"] / 10), 2 * (hitboxexpand["Value"] / 10), 1 * (hitboxexpand["Value"] / 10))
 						else
-							plr.Character.Head.Size = Vector3.new((hitboxexpand["Value"] / 10), (hitboxexpand["Value"] / 10), (hitboxexpand["Value"] / 10))
+							plr.Head.Size = Vector3.new((hitboxexpand["Value"] / 10), (hitboxexpand["Value"] / 10), (hitboxexpand["Value"] / 10))
 						end
 					end
 				end
 			end)
 		else
-			UnbindFromRenderStep("HitBoxes") 
+			RunLoops:UnbindFromRenderStep("HitBoxes") 
 			for i,plr in pairs(players:GetChildren()) do
-				if isAlive(plr) then
-					plr.Character.HumanoidRootPart.Size = Vector3.new(2, 2, 1)
-					plr.Character.Head.Size = Vector3.new(1, 1, 1)
+				local aliveplr = isAlive(plr)
+				if aliveplr then
+					aliveplr.RootPart.Size = Vector3.new(2, 2, 1)
+					aliveplr.Head.Size = Vector3.new(1, 1, 1)
 				end
 			end
 		end
@@ -1353,10 +1364,13 @@ hitboxoption = Hitbox.CreateDropdown({
 	["Name"] = "Expand part",
 	["List"] = {"HumanoidRootPart", "Head"},
 	["Function"] = function()
-		for i,plr in pairs(players:GetChildren()) do
-			if isAlive(plr) then
-				plr.Character.HumanoidRootPart.Size = Vector3.new(2, 2, 1)
-				plr.Character.Head.Size = Vector3.new(1, 1, 1)
+		if Hitbox["Enabled"] then 
+			for i,plr in pairs(players:GetChildren()) do
+				local aliveplr = isAlive(plr)
+				if aliveplr then
+					aliveplr.RootPart.Size = Vector3.new(2, 2, 1)
+					aliveplr.Head.Size = Vector3.new(1, 1, 1)
+				end
 			end
 		end
 	end
@@ -1376,7 +1390,7 @@ Killaura = GuiLibrary["ObjectsThatCanBeSaved"]["BlatantWindow"]["Api"].CreateOpt
 	["Name"] = "Killaura", 
 	["Function"] = function(callback)
 		if callback then
-			BindToRenderStep("Killaura", 1, function() 
+			RunLoops:BindToRenderStep("Killaura", 1, function() 
 				killauranear = false
 				if entity.isAlive then
 					local tool = lplr.Character:FindFirstChildWhichIsA("Tool")
@@ -1388,7 +1402,7 @@ Killaura = GuiLibrary["ObjectsThatCanBeSaved"]["BlatantWindow"]["Api"].CreateOpt
 							local targetsize = 0
 							for i,v in pairs(plr) do
 								local localfacing = entity.character.HumanoidRootPart.CFrame.lookVector
-								local vec = (v.Character.HumanoidRootPart.Position - entity.character.HumanoidRootPart.Position).unit
+								local vec = (v.RootPart.Position - entity.character.HumanoidRootPart.Position).unit
 								local angle = math.acos(localfacing:Dot(vec))
 								if angle <= math.rad(killauraangle["Value"]) then
 									killauranear = true
@@ -1399,14 +1413,14 @@ Killaura = GuiLibrary["ObjectsThatCanBeSaved"]["BlatantWindow"]["Api"].CreateOpt
 									}
 									targetsize = targetsize + 1
 									if killauracframe["Enabled"] then
-										lplr.Character:SetPrimaryPartCFrame(CFrame.new(lplr.Character.PrimaryPart.Position, Vector3.new(v.Character:FindFirstChild("HumanoidRootPart").Position.X, lplr.Character.PrimaryPart.Position.Y, v.Character:FindFirstChild("HumanoidRootPart").Position.Z)))
+										entity.character.RootPart.CFrame = CFrame.new(entity.character.RootPart.Position, Vector3.new(v.RootPart.Position.X, entity.character.RootPart.Position.Y, v.RootPart.Position.Z))
 									end
 									if killauratick <= tick() then
 										tool:Activate()
 										killauratick = tick() + (1 / killauraaps["GetRandomValue"]())
 									end
-									firetouchinterest(touch.Parent, v.Character.HumanoidRootPart, 1)
-									firetouchinterest(touch.Parent, v.Character.HumanoidRootPart, 0)
+									firetouchinterest(touch.Parent, v.RootPart, 1)
+									firetouchinterest(touch.Parent, v.RootPart, 0)
 								end
 							end
 							targetinfo.UpdateInfo(targettable, targetsize)
@@ -1415,7 +1429,7 @@ Killaura = GuiLibrary["ObjectsThatCanBeSaved"]["BlatantWindow"]["Api"].CreateOpt
 				end
 			end)
 		else
-			UnbindFromRenderStep("Killaura")
+			RunLoops:UnbindFromRenderStep("Killaura")
 			killauranear = false
 		end
 	end,
@@ -1465,9 +1479,9 @@ longjump = GuiLibrary["ObjectsThatCanBeSaved"]["BlatantWindow"]["Api"].CreateOpt
 					entity.character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
 				end
 			end
-			BindToRenderStep("LongJump", 1, function() 
+			RunLoops:BindToRenderStep("LongJump", 1, function() 
 				if entity.isAlive then
-					if (entity.character.Humanoid:GetState() == Enum.HumanoidStateType.Freefall or entity.character.Humanoid:GetState() == Enum.HumanoidStateType.Jumping) and entity.character.Humanoid.MoveDirection ~= Vector3.new(0, 0, 0) then
+					if (entity.character.Humanoid:GetState() == Enum.HumanoidStateType.Freefall or entity.character.Humanoid:GetState() == Enum.HumanoidStateType.Jumping) and entity.character.Humanoid.MoveDirection ~= Vector3.new() then
 						local velo = entity.character.Humanoid.MoveDirection * longjumpboost["Value"]
 						entity.character.HumanoidRootPart.Velocity = Vector3.new(velo.X, entity.character.HumanoidRootPart.Velocity.Y, velo.Z)
 					end
@@ -1482,7 +1496,7 @@ longjump = GuiLibrary["ObjectsThatCanBeSaved"]["BlatantWindow"]["Api"].CreateOpt
 				end
 			end)
 		else
-			UnbindFromRenderStep("LongJump")
+			RunLoops:UnbindFromRenderStep("LongJump")
 			longjumpfall = false
 		end
 	end
@@ -1528,7 +1542,7 @@ HighJump = GuiLibrary["ObjectsThatCanBeSaved"]["BlatantWindow"]["Api"].CreateOpt
 				HighJump["ToggleButton"](false)
 			else
 				highjumpbound = true
-				BindToRenderStep("HighJump", 1, function()
+				RunLoops:BindToRenderStep("HighJump", 1, function()
 					if HighJumpTick <= tick() and entity.isAlive and (entity.character.Humanoid:GetState() == Enum.HumanoidStateType.Running or entity.character.Humanoid:GetState() == Enum.HumanoidStateType.RunningNoPhysics) and uis:IsKeyDown(Enum.KeyCode.Space) then
 						HighJumpTick = tick() + (HighJumpDelay["Value"] / 10)
 						entity.character.HumanoidRootPart.Velocity = Vector3.new(0, HighJumpBoost["Value"], 0)
@@ -1537,7 +1551,7 @@ HighJump = GuiLibrary["ObjectsThatCanBeSaved"]["BlatantWindow"]["Api"].CreateOpt
 			end
 		else
 			if highjumpbound then
-				UnbindFromRenderStep("HighJump")
+				RunLoops:UnbindFromRenderStep("HighJump")
 			end
 		end
 	end,
@@ -1574,7 +1588,7 @@ phase = GuiLibrary["ObjectsThatCanBeSaved"]["BlatantWindow"]["Api"].CreateOption
 	["Name"] = "Phase", 
 	["Function"] = function(callback)
 		if callback then
-			BindToStepped("Phase", 1, function()
+			RunLoops:BindToStepped("Phase", 1, function() -- has to be ran on stepped idk why
 				if entity.isAlive then
 					if phasemode["Value"] == "Normal" then
 						for i, part in pairs(lplr.Character:GetDescendants()) do
@@ -1584,7 +1598,7 @@ phase = GuiLibrary["ObjectsThatCanBeSaved"]["BlatantWindow"]["Api"].CreateOption
 							end
 						end
 					else
-						local chars = {}
+						local chars = {cam}
 						for i,v in pairs(players:GetChildren()) do
 							table.insert(chars, v.Character)
 						end
@@ -1600,19 +1614,12 @@ phase = GuiLibrary["ObjectsThatCanBeSaved"]["BlatantWindow"]["Api"].CreateOption
 							if newray.Instance.Size[dir] <= phaselimit["Value"] and newray.Instance.CanCollide then
 								entity.character.HumanoidRootPart.CFrame = entity.character.HumanoidRootPart.CFrame + (newray.Normal * (-(newray.Instance.Size[dir]) - 2))
 							end
-							--[[if isPointInMapOccupied(getScaffold(pos, false) + (newray.Normal * -6)) and isPointInMapOccupied(getScaffold(pos2, false) + (newray.Normal * -6)) then
-								phasedelay = tick() + 0.075
-								phasedelay2 = tick() + 0.1
-								slowdownspeed = true
-								nocheck = true
-								entity.character.HumanoidRootPart.CFrame = addvectortocframe(entity.character.HumanoidRootPart.CFrame, (newray.Normal * -2.5))
-							end]]
 						end
 					end
 				end
 			end)
 		else
-			UnbindFromStepped("Phase")
+			RunLoops:UnbindFromStepped("Phase")
 			for i,v in pairs(phaseparts) do
 				if i then
 					i.CanCollide = true
@@ -1644,17 +1651,18 @@ phaselimit["Object"].Visible = phasemode["Value"] == "AntiCheat"
 
 runcode(function()
 	local spiderspeed = {["Value"] = 0}
+	local spiderstate = {["Enabled"] = false}
 	Spider = GuiLibrary["ObjectsThatCanBeSaved"]["BlatantWindow"]["Api"].CreateOptionsButton({
 		["Name"] = "Spider",
 		["Function"] = function(callback)
 			if callback then
-				BindToStepped("Spider", 1, function()
+				RunLoops:BindToHeartbeat("Spider", 1, function()
 					if entity.isAlive then
-						local chars = {}
+						local chars = {cam}
 						for i,v in pairs(players:GetChildren()) do
 							table.insert(chars, v.Character)
 						end
-						local vec = (entity.character.Humanoid.MoveDirection ~= Vector3.new(0, 0, 0) and entity.character.Humanoid.MoveDirection.Unit * 2 or Vector3.new(0, 0, 0))
+						local vec = (entity.character.Humanoid.MoveDirection ~= Vector3.new() and entity.character.Humanoid.MoveDirection.Unit * 2 or Vector3.new())
 						local raycastparameters = RaycastParams.new()
 						raycastparameters.FilterDescendantsInstances = chars
 						raycastparameters.FilterType = Enum.RaycastFilterType.Blacklist
@@ -1667,13 +1675,16 @@ runcode(function()
 						holdingshift = uis:IsKeyDown(Enum.KeyCode.LeftShift)
 						if (newray or newray2) and (newray or newray2).Normal.Y == 0 then
 							if (newray or newray2) and (GuiLibrary["ObjectsThatCanBeSaved"]["PhaseOptionsButton"]["Api"]["Enabled"] and holdingshift == false or GuiLibrary["ObjectsThatCanBeSaved"]["PhaseOptionsButton"]["Api"]["Enabled"] == false) then
+								if spiderstate["Enabled"] then 
+									entity.character.Humanoid:ChangeState(Enum.HumanoidStateType.Climbing)
+								end
 								entity.character.HumanoidRootPart.Velocity = Vector3.new(entity.character.HumanoidRootPart.Velocity.X - (entity.character.HumanoidRootPart.CFrame.lookVector.X / 2), spiderspeed["Value"], entity.character.HumanoidRootPart.Velocity.Z - (entity.character.HumanoidRootPart.CFrame.lookVector.Z / 2))
 							end
 						end
 					end
 				end)
 			else
-				UnbindFromStepped("Spider")
+				RunLoops:UnbindFromHeartbeat("Spider")
 			end
 		end,
 		["HoverText"] = "Lets you climb up walls"
@@ -1684,6 +1695,10 @@ runcode(function()
 		["Max"] = 100,
 		["Function"] = function() end,
 		["Default"] = 30
+	})
+	spiderstate = Spider.CreateToggle({
+		["Name"] = "Climb State",
+		["Function"] = function() end
 	})
 end)
 
@@ -1740,11 +1755,11 @@ runcode(function()
 						d = false
 					end
 				end)
-				BindToStepped("Speed", 1, function(time, delta)
+				RunLoops:BindToHeartbeat("Speed", 1, function(delta)
 					if entity.isAlive then
 						local jumpcheck = killauranear and Killaura["Enabled"]
-						local movevec = (speedmovemethod["Value"] == "Manual" and (not (w or s or a or d)) and Vector3.new(0, 0, 0) or entity.character.Humanoid.MoveDirection).Unit
-						movevec = movevec == movevec and movevec or Vector3.new(0, 0, 0)
+						local movevec = (speedmovemethod["Value"] == "Manual" and (not (w or s or a or d)) and Vector3.new() or entity.character.Humanoid.MoveDirection).Unit
+						movevec = movevec == movevec and movevec or Vector3.new()
 						if speedmethod["Value"] == "Velocity" then
 							local newvelo = movevec * speedval["Value"]
 							entity.character.HumanoidRootPart.Velocity = Vector3.new(newvelo.X, entity.character.HumanoidRootPart.Velocity.Y, newvelo.Z)
@@ -1752,7 +1767,8 @@ runcode(function()
 							local newpos = (movevec * (math.clamp(speedval["Value"] - entity.character.Humanoid.WalkSpeed, 0, 1000000000) * delta))
 							if speedwallcheck["Enabled"] then
 								local raycastparameters = RaycastParams.new()
-								raycastparameters.FilterDescendantsInstances = {lplr.Character}
+								raycastparameters.FilterType = Enum.RaycastFilterType.Blacklist
+								raycastparameters.FilterDescendantsInstances = {lplr.Character, cam}
 								local ray = workspace:Raycast(entity.character.HumanoidRootPart.Position, newpos, raycastparameters)
 								if ray then newpos = (ray.Position - entity.character.HumanoidRootPart.Position) end
 							end
@@ -1763,7 +1779,8 @@ runcode(function()
 								local newpos = (movevec * speedval["Value"])
 								if speedwallcheck["Enabled"] then
 									local raycastparameters = RaycastParams.new()
-									raycastparameters.FilterDescendantsInstances = {lplr.Character}
+									raycastparameters.RaycastFilterType = Enum.RaycastFilterType.Blacklist
+									raycastparameters.FilterDescendantsInstances = {lplr.Character, cam}
 									local ray = workspace:Raycast(entity.character.HumanoidRootPart.Position, newpos, raycastparameters)
 									if ray then newpos = (ray.Position - entity.character.HumanoidRootPart.Position) end
 								end
@@ -1776,7 +1793,7 @@ runcode(function()
 							entity.character.Humanoid.WalkSpeed = speedval["Value"]
 						end
 						if speedjump["Enabled"] and (speedjumpalways["Enabled"] or jumpcheck) then
-							if (entity.character.Humanoid.FloorMaterial ~= Enum.Material.Air) and entity.character.Humanoid.MoveDirection ~= Vector3.new(0, 0, 0) then
+							if (entity.character.Humanoid.FloorMaterial ~= Enum.Material.Air) and entity.character.Humanoid.MoveDirection ~= Vector3.new() then
 								entity.character.HumanoidRootPart.Velocity = Vector3.new(entity.character.HumanoidRootPart.Velocity.X, speedjumpheight["Value"], entity.character.HumanoidRootPart.Velocity.Z)
 							end
 						end
@@ -1797,7 +1814,7 @@ runcode(function()
 					entity.character.Humanoid.WalkSpeed = oldwalkspeed
 					oldwalkspeed = nil
 				end
-				UnbindFromStepped("Speed")
+				RunLoops:UnbindFromHeartbeat("Speed")
 			end
 		end,
 		["ExtraText"] = function() return speedmethod["Value"] end
@@ -1872,7 +1889,7 @@ runcode(function()
 		["Name"] = "SpinBot",
 		["Function"] = function(callback)
 			if callback then
-				BindToRenderStep("SpinBot", 1, function()
+				RunLoops:BindToRenderStep("SpinBot", 1, function()
 					if entity.isAlive then
 						if (bodyspin == nil or bodyspin ~= nil and bodyspin.Parent ~= entity.character.HumanoidRootPart) then
 							bodyspin = Instance.new("BodyAngularVelocity")
@@ -1888,7 +1905,7 @@ runcode(function()
 				if bodyspin then
 					bodyspin:Remove()
 				end
-				UnbindFromRenderStep("SpinBot")
+				RunLoops:UnbindFromRenderStep("SpinBot")
 			end
 		end,
 		["HoverText"] = "Makes your character spin around in circles (does not work in first person)"
@@ -1904,8 +1921,6 @@ end)
 
 runcode(function()
 	local oldgrav
-	local gravchanged = false
-	local gravconnection
 	local grav = {["Enabled"] = false}
 	local gravslider = {["Value"] = 100}
 	grav = GuiLibrary["ObjectsThatCanBeSaved"]["BlatantWindow"]["Api"].CreateOptionsButton({
@@ -1926,6 +1941,7 @@ runcode(function()
 		["Max"] = 192,
 		["Function"] = function(val) 
 			if grav["Enabled"] then
+				gravchanged = true
 				workspace.Gravity = val
 			end
 		end,
@@ -1934,44 +1950,25 @@ runcode(function()
 end)
 
 local healthColorToPosition = {
-	[Vector3.new(Color3.fromRGB(255, 28, 0).r,
-		Color3.fromRGB(255, 28, 0).g,
-		Color3.fromRGB(255, 28, 0).b)] = 0.1;
-	[Vector3.new(Color3.fromRGB(250, 235, 0).r,
-		Color3.fromRGB(250, 235, 0).g,
-		Color3.fromRGB(250, 235, 0).b)] = 0.5;
-	[Vector3.new(Color3.fromRGB(27, 252, 107).r,
-		Color3.fromRGB(27, 252, 107).g,
-		Color3.fromRGB(27, 252, 107).b)] = 0.8;
+	[0.01] = Color3.fromRGB(255, 28, 0);
+	[0.5] = Color3.fromRGB(250, 235, 0);
+	[0.99] = Color3.fromRGB(27, 252, 107);
 }
-local min = 0.1
-local minColor = Color3.fromRGB(255, 28, 0)
-local max = 0.8
-local maxColor = Color3.fromRGB(27, 252, 107)
 
 local function HealthbarColorTransferFunction(healthPercent)
-	if healthPercent < min then
-		return minColor
-	elseif healthPercent > max then
-		return maxColor
-	end
-
-
-	local numeratorSum = Vector3.new(0,0,0)
-	local denominatorSum = 0
-	for colorSampleValue, samplePoint in pairs(healthColorToPosition) do
-		local distance = healthPercent - samplePoint
-		if distance == 0 then
-
-			return Color3.new(colorSampleValue.x, colorSampleValue.y, colorSampleValue.z)
+	healthPercent = math.clamp(healthPercent, 0.01, 0.99)
+	local lastcolor = Color3.new(1, 1, 1)
+	for samplePoint, colorSampleValue in pairs(healthColorToPosition) do
+		local distance = (healthPercent / samplePoint)
+		if distance == 1 then
+			return colorSampleValue
+		elseif distance < 1 then 
+			return lastcolor:lerp(colorSampleValue, distance)
 		else
-			local wi = 1 / (distance*distance)
-			numeratorSum = numeratorSum + wi * colorSampleValue
-			denominatorSum = denominatorSum + wi
+			lastcolor = colorSampleValue
 		end
 	end
-	local result = numeratorSum / denominatorSum
-	return Color3.new(result.x, result.y, result.z)
+	return lastcolor
 end
 
 local ArrowsFolder = Instance.new("Folder")
@@ -1988,7 +1985,7 @@ local Arrows = GuiLibrary["ObjectsThatCanBeSaved"]["RenderWindow"]["Api"].Create
 	["Name"] = "Arrows", 
 	["Function"] = function(callback) 
 		if callback then
-			BindToRenderStep("Arrows", 500, function()
+			RunLoops:BindToRenderStep("Arrows", 500, function()
 				for i,plr in pairs(players:GetChildren()) do
 					local thing
 					if ArrowsFolder:FindFirstChild(plr.Name) then
@@ -2003,15 +2000,16 @@ local Arrows = GuiLibrary["ObjectsThatCanBeSaved"]["RenderWindow"]["Api"].Create
 						thing.AnchorPoint = Vector2.new(0.5, 0.5)
 						thing.Position = UDim2.new(0.5, 0, 0.5, 0)
 						thing.Visible = false
-						thing.Image = getcustomassetfunc("Nemo/assets/ArrowIndicator.png")
+						thing.Image = getcustomassetfunc("vape/assets/ArrowIndicator.png")
 						thing.Name = plr.Name
 						thing.Parent = ArrowsFolder
 					end
-
-					if isAlive(plr) and plr ~= lplr and (ArrowsTeammate["Enabled"] or shared.vapeteamcheck(plr)) then
-						local rootPos, rootVis = cam:WorldToViewportPoint(plr.Character.HumanoidRootPart.Position)
+					
+					local aliveplr = isAlive(plr)
+					if aliveplr and plr ~= lplr and (ArrowsTeammate["Enabled"] or shared.vapeteamcheck(plr)) then
+						local rootPos, rootVis = cam:WorldToViewportPoint(aliveplr.RootPart.Position)
 						local camcframeflat = CFrame.new(cam.CFrame.p, cam.CFrame.p + cam.CFrame.lookVector * Vector3.new(1, 0, 1))
-						local pointRelativeToCamera = camcframeflat:pointToObjectSpace(plr.Character.HumanoidRootPart.Position)
+						local pointRelativeToCamera = camcframeflat:pointToObjectSpace(aliveplr.RootPart.Position)
 						local unitRelativeVector = (pointRelativeToCamera * Vector3.new(1, 0, 1)).unit
 						local rotation = math.atan2(unitRelativeVector.Z, unitRelativeVector.X)
 						thing.Visible = not rootVis
@@ -2020,7 +2018,7 @@ local Arrows = GuiLibrary["ObjectsThatCanBeSaved"]["RenderWindow"]["Api"].Create
 				end
 			end)
 		else
-			UnbindFromRenderStep("Arrows") 
+			RunLoops:UnbindFromRenderStep("Arrows") 
 			ArrowsFolder:ClearAllChildren()
 		end
 	end, 
@@ -2078,11 +2076,12 @@ runcode(function()
 	local ESPMethod = {["Value"] = "2D"}
 	local ESPDrawing = {["Enabled"] = false}
 	local ESPTeammates = {["Enabled"] = true}
+	local ESPAlive = {["Enabled"] = false}
 	local ESP = GuiLibrary["ObjectsThatCanBeSaved"]["RenderWindow"]["Api"].CreateOptionsButton({
 		["Name"] = "ESP", 
 		["Function"] = function(callback) 
 			if callback then
-				BindToRenderStep("ESP", 500, function()
+				RunLoops:BindToRenderStep("ESP", 500, function()
 					for i,plr in pairs(players:GetChildren()) do
 						local thing
 						if ESPDrawing["Enabled"] then 
@@ -2115,25 +2114,25 @@ runcode(function()
 									thing = espfolderdrawing[plr.Name]
 								end
 
-
-								if isAlive(plr) and plr ~= lplr and (ESPTeammates["Enabled"] or shared.vapeteamcheck(plr)) then
-									local rootPos, rootVis = cam:WorldToViewportPoint(plr.Character.HumanoidRootPart.Position)
-									local rootSize = (plr.Character.HumanoidRootPart.Size.X * 1200) * (cam.ViewportSize.X / 1920)
-									local headPos, headVis = cam:WorldToViewportPoint(plr.Character.HumanoidRootPart.Position + Vector3.new(0, 1 + (plr.Character.Humanoid.RigType == Enum.HumanoidRigType.R6 and 2 or plr.Character.Humanoid.HipHeight), 0))
-									local legPos, legVis = cam:WorldToViewportPoint(plr.Character.HumanoidRootPart.Position - Vector3.new(0, 1 + (plr.Character.Humanoid.RigType == Enum.HumanoidRigType.R6 and 2 or plr.Character.Humanoid.HipHeight), 0))
+								local aliveplr = isAlive(plr, ESPAlive["Enabled"])
+								if aliveplr and plr ~= lplr and (ESPTeammates["Enabled"] or shared.vapeteamcheck(plr)) then
+									local rootPos, rootVis = cam:WorldToViewportPoint(aliveplr.RootPart.Position)
+									local rootSize = (aliveplr.RootPart.Size.X * 1200) * (cam.ViewportSize.X / 1920)
+									local headPos, headVis = cam:WorldToViewportPoint(aliveplr.RootPart.Position + Vector3.new(0, 1 + (rigcheck and 2 or aliveplr.Humanoid.HipHeight), 0))
+									local legPos, legVis = cam:WorldToViewportPoint(aliveplr.RootPart.Position - Vector3.new(0, 1 + (rigcheck and 2 or aliveplr.Humanoid.HipHeight), 0))
 									rootPos = rootPos
 									if rootVis then
 										--thing.Visible = rootVis
 										local sizex, sizey = (rootSize / rootPos.Z), (headPos.Y - legPos.Y) 
 										local posx, posy = (rootPos.X - sizex / 2),  ((rootPos.Y - sizey / 2))
 										if ESPHealthBar["Enabled"] then
-											local color = HealthbarColorTransferFunction(plr.Character.Humanoid.Health / plr.Character.Humanoid.MaxHealth)
+											local color = HealthbarColorTransferFunction(aliveplr.Humanoid.Health / aliveplr.Humanoid.MaxHealth)
 											thing.Quad3.Color = color
 											thing.Quad3.Visible = true
 											thing.Quad4.From = floorpos(Vector2.new(posx - 4, posy + 1))
 											thing.Quad4.To = floorpos(Vector2.new(posx - 4, posy + sizey - 1))
 											thing.Quad4.Visible = true
-											local healthposy = sizey * math.clamp(plr.Character.Humanoid.Health / plr.Character.Humanoid.MaxHealth, 0, 1)
+											local healthposy = sizey * math.clamp(aliveplr.Humanoid.Health / aliveplr.Humanoid.MaxHealth, 0, 1)
 											thing.Quad3.From = floorpos(Vector2.new(posx - 4, posy + sizey - (sizey - healthposy)))
 											thing.Quad3.To = floorpos(Vector2.new(posx - 4, posy))
 											--thing.HealthLineMain.Size = UDim2.new(0, 1, math.clamp(plr.Character.Humanoid.Health / plr.Character.Humanoid.MaxHealth, 0, 1), (math.clamp(plr.Character.Humanoid.Health / plr.Character.Humanoid.MaxHealth, 0, 1) == 0 and 0 or -2))
@@ -2170,22 +2169,24 @@ runcode(function()
 									thing.RightLeg = Drawing.new("Line")
 									espfolderdrawing[plr.Name] = thing
 								end
-
-								if isAlive(plr) and plr ~= lplr and (ESPTeammates["Enabled"] or shared.vapeteamcheck(plr)) then
+								
+								local aliveplr = isAlive(plr, ESPAlive["Enabled"])
+								if aliveplr and plr ~= lplr and (ESPTeammates["Enabled"] or shared.vapeteamcheck(plr)) then
 									local rootPos, rootVis = cam:WorldToViewportPoint(plr.Character.HumanoidRootPart.Position)
-									if rootVis and plr.Character:FindFirstChild((plr.Character.Humanoid.RigType == Enum.HumanoidRigType.R6 and "Torso" or "UpperTorso")) and plr.Character:FindFirstChild((plr.Character.Humanoid.RigType == Enum.HumanoidRigType.R6 and "Left Arm" or "LeftHand")) and plr.Character:FindFirstChild((plr.Character.Humanoid.RigType == Enum.HumanoidRigType.R6 and "Right Arm" or "RightHand")) and plr.Character:FindFirstChild((plr.Character.Humanoid.RigType == Enum.HumanoidRigType.R6 and "Left Leg" or "LeftFoot")) and plr.Character:FindFirstChild((plr.Character.Humanoid.RigType == Enum.HumanoidRigType.R6 and "Right Leg" or "RightFoot")) and plr.Character:FindFirstChild("Head") then
-										local head = CalculateObjectPosition((plr.Character["Head"].CFrame).p)
-										local headfront = CalculateObjectPosition((plr.Character["Head"].CFrame * CFrame.new(0, 0, -0.5)).p)
-										local toplefttorso = CalculateObjectPosition((plr.Character[(plr.Character.Humanoid.RigType == Enum.HumanoidRigType.R6 and "Torso" or "UpperTorso")].CFrame * CFrame.new(-1.5, 0.8, 0)).p)
-										local toprighttorso = CalculateObjectPosition((plr.Character[(plr.Character.Humanoid.RigType == Enum.HumanoidRigType.R6 and "Torso" or "UpperTorso")].CFrame * CFrame.new(1.5, 0.8, 0)).p)
-										local toptorso = CalculateObjectPosition((plr.Character[(plr.Character.Humanoid.RigType == Enum.HumanoidRigType.R6 and "Torso" or "UpperTorso")].CFrame * CFrame.new(0, 0.8, 0)).p)
-										local bottomtorso = CalculateObjectPosition((plr.Character[(plr.Character.Humanoid.RigType == Enum.HumanoidRigType.R6 and "Torso" or "UpperTorso")].CFrame * CFrame.new(0, -0.8, 0)).p)
-										local bottomlefttorso = CalculateObjectPosition((plr.Character[(plr.Character.Humanoid.RigType == Enum.HumanoidRigType.R6 and "Torso" or "UpperTorso")].CFrame * CFrame.new(-0.5, -0.8, 0)).p)
-										local bottomrighttorso = CalculateObjectPosition((plr.Character[(plr.Character.Humanoid.RigType == Enum.HumanoidRigType.R6 and "Torso" or "UpperTorso")].CFrame * CFrame.new(0.5, -0.8, 0)).p)
-										local leftarm = CalculateObjectPosition((plr.Character[(plr.Character.Humanoid.RigType == Enum.HumanoidRigType.R6 and "Left Arm" or "LeftHand")].CFrame * CFrame.new(0, -0.8, 0)).p)
-										local rightarm = CalculateObjectPosition((plr.Character[(plr.Character.Humanoid.RigType == Enum.HumanoidRigType.R6 and "Right Arm" or "RightHand")].CFrame * CFrame.new(0, -0.8, 0)).p)
-										local leftleg = CalculateObjectPosition((plr.Character[(plr.Character.Humanoid.RigType == Enum.HumanoidRigType.R6 and "Left Leg" or "LeftFoot")].CFrame * CFrame.new(0, -0.8, 0)).p)
-										local rightleg = CalculateObjectPosition((plr.Character[(plr.Character.Humanoid.RigType == Enum.HumanoidRigType.R6 and "Right Leg" or "RightFoot")].CFrame * CFrame.new(0, -0.8, 0)).p)
+									local rigcheck = aliveplr.Humanoid.RigType == Enum.HumanoidRigType.R6
+									if rootVis and plr.Character:FindFirstChild((rigcheck and "Torso" or "UpperTorso")) and plr.Character:FindFirstChild((rigcheck and "Left Arm" or "LeftHand")) and plr.Character:FindFirstChild((rigcheck and "Right Arm" or "RightHand")) and plr.Character:FindFirstChild((rigcheck and "Left Leg" or "LeftFoot")) and plr.Character:FindFirstChild((rigcheck and "Right Leg" or "RightFoot")) and plr.Character:FindFirstChild("Head") then
+										local head = CalculateObjectPosition((aliveplr.Head.CFrame).p)
+										local headfront = CalculateObjectPosition((aliveplr.Head.CFrame * CFrame.new(0, 0, -0.5)).p)
+										local toplefttorso = CalculateObjectPosition((aliveplr.Character[(rigcheck and "Torso" or "UpperTorso")].CFrame * CFrame.new(-1.5, 0.8, 0)).p)
+										local toprighttorso = CalculateObjectPosition((aliveplr.Character[(rigcheck and "Torso" or "UpperTorso")].CFrame * CFrame.new(1.5, 0.8, 0)).p)
+										local toptorso = CalculateObjectPosition((aliveplr.Character[(rigcheck and "Torso" or "UpperTorso")].CFrame * CFrame.new(0, 0.8, 0)).p)
+										local bottomtorso = CalculateObjectPosition((aliveplr.Character[(rigcheck and "Torso" or "UpperTorso")].CFrame * CFrame.new(0, -0.8, 0)).p)
+										local bottomlefttorso = CalculateObjectPosition((aliveplr.Character[(rigcheck and "Torso" or "UpperTorso")].CFrame * CFrame.new(-0.5, -0.8, 0)).p)
+										local bottomrighttorso = CalculateObjectPosition((aliveplr.Character[(rigcheck and "Torso" or "UpperTorso")].CFrame * CFrame.new(0.5, -0.8, 0)).p)
+										local leftarm = CalculateObjectPosition((aliveplr.Character[(rigcheck and "Left Arm" or "LeftHand")].CFrame * CFrame.new(0, -0.8, 0)).p)
+										local rightarm = CalculateObjectPosition((aliveplr.Character[(rigcheck and "Right Arm" or "RightHand")].CFrame * CFrame.new(0, -0.8, 0)).p)
+										local leftleg = CalculateObjectPosition((aliveplr.Character[(rigcheck and "Left Leg" or "LeftFoot")].CFrame * CFrame.new(0, -0.8, 0)).p)
+										local rightleg = CalculateObjectPosition((aliveplr.Character[(rigcheck and "Right Leg" or "RightFoot")].CFrame * CFrame.new(0, -0.8, 0)).p)
 										thing.Torso.From = toplefttorso
 										thing.Torso.To = toprighttorso
 										thing.Torso.Visible = true
@@ -2322,18 +2323,19 @@ runcode(function()
 									healthlineclone.BackgroundColor3 = Color3.new(0, 0, 0)
 									healthlineclone.Parent = thing
 								end
-
-								if isAlive(plr) and plr ~= lplr and (ESPTeammates["Enabled"] or shared.vapeteamcheck(plr)) then
-									local rootPos, rootVis = cam:WorldToViewportPoint(plr.Character.HumanoidRootPart.Position)
-									local rootSize = (plr.Character.HumanoidRootPart.Size.X * 1200) * (cam.ViewportSize.X / 1920)
-									local headPos, headVis = cam:WorldToViewportPoint(plr.Character.HumanoidRootPart.Position + Vector3.new(0, 1 + (plr.Character.Humanoid.RigType == Enum.HumanoidRigType.R6 and 2 or plr.Character.Humanoid.HipHeight), 0))
-									local legPos, legVis = cam:WorldToViewportPoint(plr.Character.HumanoidRootPart.Position - Vector3.new(0, 1 + (plr.Character.Humanoid.RigType == Enum.HumanoidRigType.R6 and 2 or plr.Character.Humanoid.HipHeight), 0))
+								
+								local aliveplr = isAlive(plr, ESPAlive["Enabled"])
+								if aliveplr and plr ~= lplr and (ESPTeammates["Enabled"] or shared.vapeteamcheck(plr)) then
+									local rootPos, rootVis = cam:WorldToViewportPoint(aliveplr.RootPart.Position)
+									local rootSize = (aliveplr.RootPart.Size.X * 1200) * (cam.ViewportSize.X / 1920)
+									local headPos, headVis = cam:WorldToViewportPoint(aliveplr.RootPart.Position + Vector3.new(0, 1 + (rigcheck and 2 or aliveplr.Humanoid.HipHeight), 0))
+									local legPos, legVis = cam:WorldToViewportPoint(aliveplr.RootPart.Position - Vector3.new(0, 1 + (rigcheck and 2 or aliveplr.Humanoid.HipHeight), 0))
 									rootPos = rootPos
 									if rootVis then
 										if ESPHealthBar["Enabled"] then
-											local color = HealthbarColorTransferFunction(plr.Character.Humanoid.Health / plr.Character.Humanoid.MaxHealth)
+											local color = HealthbarColorTransferFunction(aliveplr.Humanoid.Health / aliveplr.Humanoid.MaxHealth)
 											thing.HealthLineMain.BackgroundColor3 = color
-											thing.HealthLineMain.Size = UDim2.new(0, 1, math.clamp(plr.Character.Humanoid.Health / plr.Character.Humanoid.MaxHealth, 0, 1), (math.clamp(plr.Character.Humanoid.Health / plr.Character.Humanoid.MaxHealth, 0, 1) == 0 and 0 or -2))
+											thing.HealthLineMain.Size = UDim2.new(0, 1, math.clamp(aliveplr.Humanoid.Health / aliveplr.Humanoid.MaxHealth, 0, 1), (math.clamp(aliveplr.Humanoid.Health / aliveplr.Humanoid.MaxHealth, 0, 1) == 0 and 0 or -2))
 										end
 										thing.Visible = rootVis
 										thing.Size = UDim2.new(0, rootSize / rootPos.Z, 0, headPos.Y - legPos.Y)
@@ -2389,23 +2391,25 @@ runcode(function()
 									line9.Name = "HeadForward"
 									line9.Parent = thing
 								end
-
-								if isAlive(plr) and plr ~= lplr and (ESPTeammates["Enabled"] or shared.vapeteamcheck(plr)) then
-									local rootPos, rootVis = cam:WorldToViewportPoint(plr.Character.HumanoidRootPart.Position)
-									if rootVis and plr.Character:FindFirstChild((plr.Character.Humanoid.RigType == Enum.HumanoidRigType.R6 and "Torso" or "UpperTorso")) and plr.Character:FindFirstChild((plr.Character.Humanoid.RigType == Enum.HumanoidRigType.R6 and "Left Arm" or "LeftHand")) and plr.Character:FindFirstChild((plr.Character.Humanoid.RigType == Enum.HumanoidRigType.R6 and "Right Arm" or "RightHand")) and plr.Character:FindFirstChild((plr.Character.Humanoid.RigType == Enum.HumanoidRigType.R6 and "Left Leg" or "LeftFoot")) and plr.Character:FindFirstChild((plr.Character.Humanoid.RigType == Enum.HumanoidRigType.R6 and "Right Leg" or "RightFoot")) and plr.Character:FindFirstChild("Head") then
+								
+								local aliveplr = isAlive(plr, ESPAlive["Enabled"])
+								if aliveplr and plr ~= lplr and (ESPTeammates["Enabled"] or shared.vapeteamcheck(plr)) then
+									local rootPos, rootVis = cam:WorldToViewportPoint(aliveplr.RootPart.Position)
+									local rigcheck = aliveplr.Humanoid.RigType == Enum.HumanoidRigType.R6
+									if rootVis and plr.Character:FindFirstChild((rigcheck and "Torso" or "UpperTorso")) and plr.Character:FindFirstChild((rigcheck and "Left Arm" or "LeftHand")) and plr.Character:FindFirstChild((rigcheck and "Right Arm" or "RightHand")) and plr.Character:FindFirstChild((rigcheck and "Left Leg" or "LeftFoot")) and plr.Character:FindFirstChild((rigcheck and "Right Leg" or "RightFoot")) and plr.Character:FindFirstChild("Head") then
 										thing.Visible = true
-										local head = CalculateObjectPosition((plr.Character["Head"].CFrame).p)
-										local headfront = CalculateObjectPosition((plr.Character["Head"].CFrame * CFrame.new(0, 0, -0.5)).p)
-										local toplefttorso = CalculateObjectPosition((plr.Character[(plr.Character.Humanoid.RigType == Enum.HumanoidRigType.R6 and "Torso" or "UpperTorso")].CFrame * CFrame.new(-1.5, 0.8, 0)).p)
-										local toprighttorso = CalculateObjectPosition((plr.Character[(plr.Character.Humanoid.RigType == Enum.HumanoidRigType.R6 and "Torso" or "UpperTorso")].CFrame * CFrame.new(1.5, 0.8, 0)).p)
-										local toptorso = CalculateObjectPosition((plr.Character[(plr.Character.Humanoid.RigType == Enum.HumanoidRigType.R6 and "Torso" or "UpperTorso")].CFrame * CFrame.new(0, 0.8, 0)).p)
-										local bottomtorso = CalculateObjectPosition((plr.Character[(plr.Character.Humanoid.RigType == Enum.HumanoidRigType.R6 and "Torso" or "UpperTorso")].CFrame * CFrame.new(0, -0.8, 0)).p)
-										local bottomlefttorso = CalculateObjectPosition((plr.Character[(plr.Character.Humanoid.RigType == Enum.HumanoidRigType.R6 and "Torso" or "UpperTorso")].CFrame * CFrame.new(-0.5, -0.8, 0)).p)
-										local bottomrighttorso = CalculateObjectPosition((plr.Character[(plr.Character.Humanoid.RigType == Enum.HumanoidRigType.R6 and "Torso" or "UpperTorso")].CFrame * CFrame.new(0.5, -0.8, 0)).p)
-										local leftarm = CalculateObjectPosition((plr.Character[(plr.Character.Humanoid.RigType == Enum.HumanoidRigType.R6 and "Left Arm" or "LeftHand")].CFrame * CFrame.new(0, -0.8, 0)).p)
-										local rightarm = CalculateObjectPosition((plr.Character[(plr.Character.Humanoid.RigType == Enum.HumanoidRigType.R6 and "Right Arm" or "RightHand")].CFrame * CFrame.new(0, -0.8, 0)).p)
-										local leftleg = CalculateObjectPosition((plr.Character[(plr.Character.Humanoid.RigType == Enum.HumanoidRigType.R6 and "Left Leg" or "LeftFoot")].CFrame * CFrame.new(0, -0.8, 0)).p)
-										local rightleg = CalculateObjectPosition((plr.Character[(plr.Character.Humanoid.RigType == Enum.HumanoidRigType.R6 and "Right Leg" or "RightFoot")].CFrame * CFrame.new(0, -0.8, 0)).p)
+										local head = CalculateObjectPosition((aliveplr.Head.CFrame).p)
+										local headfront = CalculateObjectPosition((aliveplr.Head.CFrame * CFrame.new(0, 0, -0.5)).p)
+										local toplefttorso = CalculateObjectPosition((aliveplr.Character[(rigcheck and "Torso" or "UpperTorso")].CFrame * CFrame.new(-1.5, 0.8, 0)).p)
+										local toprighttorso = CalculateObjectPosition((aliveplr.Character[(rigcheck and "Torso" or "UpperTorso")].CFrame * CFrame.new(1.5, 0.8, 0)).p)
+										local toptorso = CalculateObjectPosition((aliveplr.Character[(rigcheck and "Torso" or "UpperTorso")].CFrame * CFrame.new(0, 0.8, 0)).p)
+										local bottomtorso = CalculateObjectPosition((aliveplr.Character[(rigcheck and "Torso" or "UpperTorso")].CFrame * CFrame.new(0, -0.8, 0)).p)
+										local bottomlefttorso = CalculateObjectPosition((aliveplr.Character[(rigcheck and "Torso" or "UpperTorso")].CFrame * CFrame.new(-0.5, -0.8, 0)).p)
+										local bottomrighttorso = CalculateObjectPosition((aliveplr.Character[(rigcheck and "Torso" or "UpperTorso")].CFrame * CFrame.new(0.5, -0.8, 0)).p)
+										local leftarm = CalculateObjectPosition((aliveplr.Character[(rigcheck and "Left Arm" or "LeftHand")].CFrame * CFrame.new(0, -0.8, 0)).p)
+										local rightarm = CalculateObjectPosition((aliveplr.Character[(rigcheck and "Right Arm" or "RightHand")].CFrame * CFrame.new(0, -0.8, 0)).p)
+										local leftleg = CalculateObjectPosition((aliveplr.Character[(rigcheck and "Left Leg" or "LeftFoot")].CFrame * CFrame.new(0, -0.8, 0)).p)
+										local rightleg = CalculateObjectPosition((aliveplr.Character[(rigcheck and "Right Leg" or "RightFoot")].CFrame * CFrame.new(0, -0.8, 0)).p)
 										CalculateLine(toplefttorso, toprighttorso, thing.TopTorsoLine)
 										CalculateLine(toptorso, bottomtorso, thing.MiddleTorsoLine)
 										CalculateLine(bottomlefttorso, bottomrighttorso, thing.BottomTorsoLine)
@@ -2431,12 +2435,13 @@ runcode(function()
 									thing.Name = plr.Name
 									thing.Parent = ESPFolder
 								end
-
-								if isAlive(plr) and plr ~= lplr and (ESPTeammates["Enabled"] or shared.vapeteamcheck(plr)) then
-									local rootPos, rootVis = cam:WorldToViewportPoint(plr.Character.HumanoidRootPart.Position)
-									local rootSize = (plr.Character.HumanoidRootPart.Size.X * 1200) * (cam.ViewportSize.X / 1920)
-									local headPos, headVis = cam:WorldToViewportPoint(plr.Character.HumanoidRootPart.Position + Vector3.new(0, 1 + (plr.Character.Humanoid.RigType == Enum.HumanoidRigType.R6 and 2 or plr.Character.Humanoid.HipHeight), 0))
-									local legPos, legVis = cam:WorldToViewportPoint(plr.Character.HumanoidRootPart.Position - Vector3.new(0, 1 + (plr.Character.Humanoid.RigType == Enum.HumanoidRigType.R6 and 2 or plr.Character.Humanoid.HipHeight), 0))
+								
+								local aliveplr = isAlive(plr, ESPAlive["Enabled"])
+								if aliveplr and plr ~= lplr and (ESPTeammates["Enabled"] or shared.vapeteamcheck(plr)) then
+									local rootPos, rootVis = cam:WorldToViewportPoint(aliveplr.RootPart.Position)
+									local rootSize = (aliveplr.RootPart.Size.X * 1200) * (cam.ViewportSize.X / 1920)
+									local headPos, headVis = cam:WorldToViewportPoint(aliveplr.RootPart.Position + Vector3.new(0, 1 + (rigcheck and 2 or aliveplr.Humanoid.HipHeight), 0))
+									local legPos, legVis = cam:WorldToViewportPoint(aliveplr.RootPart.Position - Vector3.new(0, 1 + (rigcheck and 2 or aliveplr.Humanoid.HipHeight), 0))
 									rootPos = rootPos
 									if rootVis then
 										thing.Visible = rootVis
@@ -2449,7 +2454,7 @@ runcode(function()
 					end
 				end)
 			else
-				UnbindFromRenderStep("ESP") 
+				RunLoops:UnbindFromRenderStep("ESP") 
 				ESPFolder:ClearAllChildren()
 				for i,v in pairs(espfolderdrawing) do 
 					pcall(function()
@@ -2557,6 +2562,10 @@ runcode(function()
 			end
 		end,
 	})
+	ESPAlive = ESP.CreateToggle({
+		["Name"] = "Alive Check",
+		["Function"] = function() end
+	})
 end)
 
 runcode(function()
@@ -2576,11 +2585,12 @@ runcode(function()
 	local ChamsOnTop = {["Enabled"] = true}
 	local chamobjects = {["Head"] = true, ["Torso"] = true, ["UpperTorso"] = true, ["LowerTorso"] = true, ["Left Arm"] = true, ["Left Leg"] = true, ["Right Arm"] = true, ["Right Leg"] = true, ["LeftLowerLeg"] = true, ["RightLowerLeg"] = true, ["LeftUpperLeg"] = true, ["RightUpperLeg"] = true, ["LeftFoot"] = true, ["RightFoot"] = true, ["LeftLowerArm"] = true, ["RightLowerArm"] = true, ["LeftUpperArm"] = true, ["RightUpperArm"] = true, ["LeftHand"] = true, ["RightHand"] = true}
 	local ChamsTeammates = {["Enabled"] = true}
+	local ChamsAlive = {["Enabled"] = false}
 	local Chams = GuiLibrary["ObjectsThatCanBeSaved"]["RenderWindow"]["Api"].CreateOptionsButton({
 		["Name"] = "Chams", 
 		["Function"] = function(callback) 
 			if callback then
-				BindToRenderStep("Chams", 500, function()
+				RunLoops:BindToRenderStep("Chams", 500, function()
 					for i,plr in pairs(players:GetChildren()) do
 						local thing
 						if ChamsFolder:FindFirstChild(plr.Name) then
@@ -2590,7 +2600,8 @@ runcode(function()
 							thing.OutlineColor = getPlayerColor(plr) or Color3.fromHSV(ChamsOutlineColor["Hue"], ChamsOutlineColor["Sat"], ChamsOutlineColor["Value"])
 						end
 
-						if isAlive(plr) and plr ~= lplr and (ChamsTeammates["Enabled"] or shared.vapeteamcheck(plr)) then
+						local aliveplr = isAlive(plr, ChamsAlive["Enabled"])
+						if aliveplr and plr ~= lplr and (ChamsTeammates["Enabled"] or shared.vapeteamcheck(plr)) then
 							if ChamsFolder:FindFirstChild(plr.Name) == nil then
 								local chamfolder = Instance.new("Highlight")
 								chamfolder.Name = plr.Name
@@ -2598,7 +2609,7 @@ runcode(function()
 								thing = chamfolder
 							end
 							thing.Enabled = true
-							thing.Adornee = plr.Character
+							thing.Adornee = aliveplr.Character
 							thing.OutlineTransparency = ChamsOutlineTransparency["Value"] / 100
 							thing.DepthMode = Enum.HighlightDepthMode[(ChamsOnTop["Enabled"] and "AlwaysOnTop" or "Occluded")]
 							thing.FillTransparency = ChamsTransparency["Value"] / 100
@@ -2606,7 +2617,7 @@ runcode(function()
 					end
 				end)
 			else
-				UnbindFromRenderStep("Chams")
+				RunLoops:UnbindFromRenderStep("Chams")
 				ChamsFolder:ClearAllChildren()
 			end
 		end,
@@ -2641,6 +2652,10 @@ runcode(function()
 	})
 	ChamsOnTop = Chams.CreateToggle({
 		["Name"] = "Bypass Walls", 
+		["Function"] = function() end
+	})
+	ChamsAlive = Chams.CreateToggle({
+		["Name"] = "Alive Check",
 		["Function"] = function() end
 	})
 end)
@@ -2704,14 +2719,14 @@ local Health = GuiLibrary["ObjectsThatCanBeSaved"]["RenderWindow"]["Api"].Create
 	["Function"] = function(callback) 
 		if callback then
 			HealthText.Visible = true
-			BindToRenderStep("Health", 1, function()
+			RunLoops:BindToRenderStep("Health", 1, function()
 				if entity.isAlive then
 					HealthText.Text = tostring(math.round(entity.character.Humanoid.Health)).."❤"
 				end
 			end)
 		else
 			HealthText.Visible = false
-			UnbindFromRenderStep("Health")
+			RunLoops:UnbindFromRenderStep("Health")
 		end
 	end,
 	["HoverText"] = "Displays your health in the center of your screen."
@@ -2719,9 +2734,9 @@ local Health = GuiLibrary["ObjectsThatCanBeSaved"]["RenderWindow"]["Api"].Create
 
 runcode(function()
 	local function removeTags(str)
-		str = str:gsub("<br%s*/>", "\n")
-		return (str:gsub("<[^<>]->", ""))
-	end
+        str = str:gsub("<br%s*/>", "\n")
+        return (str:gsub("<[^<>]->", ""))
+    end
 
 	local function floorpos(pos)
 		return Vector2.new(math.floor(pos.X), math.floor(pos.Y))
@@ -2751,12 +2766,13 @@ runcode(function()
 	local NameTagsScale = {["Value"] = 10}
 	local NameTagsFont = {["Value"] = "SourceSans"}
 	local NameTagsTeammates = {["Enabled"] = true}
+	local NameTagsAlive = {["Enabled"] = false}
 	local fontitems = {"SourceSans"}
 	local NameTags = GuiLibrary["ObjectsThatCanBeSaved"]["RenderWindow"]["Api"].CreateOptionsButton({
 		["Name"] = "NameTags", 
 		["Function"] = function(callback) 
 			if callback then
-				BindToRenderStep("NameTags", 500, function()
+				RunLoops:BindToRenderStep("NameTags", 500, function()
 					for i,plr in pairs(players:GetChildren()) do
 						local thing
 						if NameTagsDrawing["Enabled"] then
@@ -2779,14 +2795,15 @@ runcode(function()
 								thing = nametagsfolderdrawing[plr.Name]
 							end
 
-							if isAlive(plr) and plr ~= lplr and (NameTagsTeammates["Enabled"] or shared.vapeteamcheck(plr)) then
-								local headPos, headVis = cam:WorldToViewportPoint((plr.Character.HumanoidRootPart:GetRenderCFrame() * CFrame.new(0, plr.Character.Head.Size.Y + plr.Character.HumanoidRootPart.Size.Y, 0)).Position)
-
+							local aliveplr = isAlive(plr, NameTagsAlive["Enabled"])
+							if aliveplr and plr ~= lplr and (NameTagsTeammates["Enabled"] or shared.vapeteamcheck(plr)) then
+								local headPos, headVis = cam:WorldToViewportPoint((aliveplr.RootPart:GetRenderCFrame() * CFrame.new(0, aliveplr.Head.Size.Y + aliveplr.RootPart.Size.Y, 0)).Position)
+								
 								if headVis then
 									local displaynamestr = (NameTagsDisplayName["Enabled"] and plr.DisplayName ~= nil and plr.DisplayName or plr.Name)
-									local blocksaway = math.floor(((entity.isAlive and entity.character.HumanoidRootPart.Position or Vector3.new(0,0,0)) - plr.Character.HumanoidRootPart.Position).magnitude / 3)
-									local color = HealthbarColorTransferFunction(plr.Character.Humanoid.Health / plr.Character.Humanoid.MaxHealth)
-									thing.Text.Text = (NameTagsDistance["Enabled"] and entity.isAlive and '['..blocksaway..'] ' or '')..displaynamestr..(NameTagsHealth["Enabled"] and ' '..math.floor(plr.Character.Humanoid.Health).."" or '')
+									local blocksaway = math.floor(((entity.isAlive and entity.character.HumanoidRootPart.Position or Vector3.new(0,0,0)) - aliveplr.RootPart.Position).magnitude / 3)
+									local color = HealthbarColorTransferFunction(aliveplr.Humanoid.Health / aliveplr.Humanoid.MaxHealth)
+									thing.Text.Text = (NameTagsDistance["Enabled"] and entity.isAlive and '['..blocksaway..'] ' or '')..displaynamestr..(NameTagsHealth["Enabled"] and ' '..math.floor(aliveplr.Humanoid.Health).."" or '')
 									thing.Text.Size = 17 * (NameTagsScale["Value"] / 10)
 									thing.Text.Color = getPlayerColor(plr) or Color3.fromHSV(NameTagsColor["Hue"], NameTagsColor["Sat"], NameTagsColor["Value"])
 									thing.Text.Visible = headVis
@@ -2829,15 +2846,16 @@ runcode(function()
 								thing.TextColor3 = getPlayerColor(plr) or Color3.fromHSV(NameTagsColor["Hue"], NameTagsColor["Sat"], NameTagsColor["Value"])
 								thing.Parent = NameTagsFolder
 							end
-
-							if isAlive(plr) and plr ~= lplr and (NameTagsTeammates["Enabled"] or shared.vapeteamcheck(plr)) then
-								local headPos, headVis = cam:WorldToViewportPoint((plr.Character.HumanoidRootPart:GetRenderCFrame() * CFrame.new(0, plr.Character.Head.Size.Y + plr.Character.HumanoidRootPart.Size.Y, 0)).Position)
+								
+							local aliveplr = isAlive(plr, NameTagsAlive["Enabled"])
+							if aliveplr and plr ~= lplr and (NameTagsTeammates["Enabled"] or shared.vapeteamcheck(plr)) then
+								local headPos, headVis = cam:WorldToViewportPoint((aliveplr.RootPart:GetRenderCFrame() * CFrame.new(0, aliveplr.Head.Size.Y + aliveplr.RootPart.Size.Y, 0)).Position)
 								headPos = headPos
-
+								
 								if headVis then
-									local rawText = (NameTagsDistance["Enabled"] and entity.isAlive and "["..math.floor((entity.character.HumanoidRootPart.Position - plr.Character.HumanoidRootPart.Position).magnitude).."] " or "")..(NameTagsDisplayName["Enabled"] and plr.DisplayName ~= nil and plr.DisplayName or plr.Name)..(NameTagsHealth["Enabled"] and " "..math.floor(plr.Character.Humanoid.Health) or "")
-									local color = HealthbarColorTransferFunction(plr.Character.Humanoid.Health / plr.Character.Humanoid.MaxHealth)
-									local modifiedText = (NameTagsDistance["Enabled"] and entity.isAlive and '<font color="rgb(85, 255, 85)">[</font><font color="rgb(255, 255, 255)">'..math.floor((entity.character.HumanoidRootPart.Position - plr.Character.HumanoidRootPart.Position).magnitude)..'</font><font color="rgb(85, 255, 85)">]</font> ' or '')..(NameTagsDisplayName["Enabled"] and plr.DisplayName ~= nil and plr.DisplayName or plr.Name)..(NameTagsHealth["Enabled"] and ' <font color="rgb('..tostring(math.floor(color.R * 255))..','..tostring(math.floor(color.G * 255))..','..tostring(math.floor(color.B * 255))..')">'..math.floor(plr.Character.Humanoid.Health).."</font>" or '')
+									local rawText = (NameTagsDistance["Enabled"] and entity.isAlive and "["..math.floor((entity.character.HumanoidRootPart.Position - aliveplr.RootPart.Position).magnitude).."] " or "")..(NameTagsDisplayName["Enabled"] and plr.DisplayName ~= nil and plr.DisplayName or plr.Name)..(NameTagsHealth["Enabled"] and " "..math.floor(aliveplr.Humanoid.Health) or "")
+									local color = HealthbarColorTransferFunction(aliveplr.Humanoid.Health / aliveplr.Humanoid.MaxHealth)
+									local modifiedText = (NameTagsDistance["Enabled"] and entity.isAlive and '<font color="rgb(85, 255, 85)">[</font><font color="rgb(255, 255, 255)">'..math.floor((entity.character.HumanoidRootPart.Position - aliveplr.RootPart.Position).magnitude)..'</font><font color="rgb(85, 255, 85)">]</font> ' or '')..(NameTagsDisplayName["Enabled"] and plr.DisplayName ~= nil and plr.DisplayName or plr.Name)..(NameTagsHealth["Enabled"] and ' <font color="rgb('..tostring(math.floor(color.R * 255))..','..tostring(math.floor(color.G * 255))..','..tostring(math.floor(color.B * 255))..')">'..math.floor(aliveplr.Humanoid.Health).."</font>" or '')
 									local nametagSize = textservice:GetTextSize(rawText, thing.TextSize, thing.Font, Vector2.new(100000, 100000))
 									thing.Size = UDim2.new(0, nametagSize.X + 4, 0, nametagSize.Y)
 									thing.Text = modifiedText
@@ -2853,7 +2871,7 @@ runcode(function()
 					end
 				end)
 			else
-				UnbindFromRenderStep("NameTags")
+				RunLoops:UnbindFromRenderStep("NameTags")
 				NameTagsFolder:ClearAllChildren()
 				for i,v in pairs(nametagsfolderdrawing) do 
 					pcall(function()
@@ -2922,6 +2940,10 @@ runcode(function()
 				end)
 			end
 		end,
+	})
+	NameTagsAlive = NameTags.CreateToggle({
+		["Name"] = "Alive Check",
+		["Function"] = function() end
 	})
 end)
 
@@ -3058,85 +3080,88 @@ runcode(function()
 	local TracersStartPosition = {["Value"] = "Middle"}
 	local TracersEndPosition = {["Value"] = "Head"}
 	local TracersTeammates = {["Enabled"] = true}
+	local TracersAlive = {["Enabled"] = false}
 	local Tracers = GuiLibrary["ObjectsThatCanBeSaved"]["RenderWindow"]["Api"].CreateOptionsButton({
 		["Name"] = "Tracers", 
 		["Function"] = function(callback) 
 			if callback then
-				BindToRenderStep("Tracers", 500, function()
+				RunLoops:BindToRenderStep("Tracers", 500, function()
 					for i,plr in pairs(players:GetChildren()) do
-						local thing
-						if TracersDrawing["Enabled"] then
-							if tracersdrawingtab[plr.Name] then 
-								thing = tracersdrawingtab[plr.Name]
-								thing.Visible = false
-							else
-								thing = Drawing.new("Line")
-								thing.Thickness = 1
-								thing.Visible = false
-								tracersdrawingtab[plr.Name] = thing
-							end
-
-							if isAlive(plr) and plr ~= lplr and (TracersTeammates["Enabled"] or shared.vapeteamcheck(plr)) then
-								local rootScrPos = cam:WorldToViewportPoint((TracersEndPosition["Value"] == "Head" and plr.Character.Head or plr.Character.HumanoidRootPart).Position)
-								local tempPos = cam.CFrame:pointToObjectSpace((TracersEndPosition["Value"] == "Head" and plr.Character.Head or plr.Character.HumanoidRootPart).Position)
-								if rootScrPos.Z < 0 then
-									tempPos = CFrame.Angles(0, 0, (math.atan2(tempPos.Y, tempPos.X) + math.pi)):vectorToWorldSpace((CFrame.Angles(0, math.rad(89.9), 0):vectorToWorldSpace(Vector3.new(0, 0, -1))));
-								end
-								local tracerPos = cam:WorldToViewportPoint(cam.CFrame:pointToWorldSpace(tempPos))
-								local screensize = cam.ViewportSize
-								local startVector = Vector2.new(screensize.X / 2, (TracersStartPosition["Value"] == "Middle" and screensize.Y / 2 or screensize.Y))
-								local endVector = Vector2.new(tracerPos.X, tracerPos.Y)
-								local Distance = (startVector - endVector).Magnitude
-								startVector = startVector
-								endVector = endVector
-								thing.Visible = true
-								thing.Transparency = 1 - TracersTransparency["Value"] / 100
-								thing.Color = getPlayerColor(plr) or Color3.fromHSV(TracersColor["Hue"], TracersColor["Sat"], TracersColor["Value"])
-								thing.From = startVector
-								thing.To = endVector
-							end
-						else
-							if TracersFolder:FindFirstChild(plr.Name) then
-								thing = TracersFolder[plr.Name]
-								if thing.Visible then
+							local thing
+							if TracersDrawing["Enabled"] then
+								if tracersdrawingtab[plr.Name] then 
+									thing = tracersdrawingtab[plr.Name]
 									thing.Visible = false
+								else
+									thing = Drawing.new("Line")
+									thing.Thickness = 1
+									thing.Visible = false
+									tracersdrawingtab[plr.Name] = thing
+								end
+
+								local aliveplr = isAlive(plr, TracersAlive["Enabled"])
+								if aliveplr and plr ~= lplr and (TracersTeammates["Enabled"] or shared.vapeteamcheck(plr)) then
+									local rootScrPos = cam:WorldToViewportPoint((TracersEndPosition["Value"] == "Head" and aliveplr.Head or aliveplr.RootPart).Position)
+									local tempPos = cam.CFrame:pointToObjectSpace((TracersEndPosition["Value"] == "Head" and aliveplr.Head or aliveplr.RootPart).Position)
+									if rootScrPos.Z < 0 then
+										tempPos = CFrame.Angles(0, 0, (math.atan2(tempPos.Y, tempPos.X) + math.pi)):vectorToWorldSpace((CFrame.Angles(0, math.rad(89.9), 0):vectorToWorldSpace(Vector3.new(0, 0, -1))));
+									end
+									local tracerPos = cam:WorldToViewportPoint(cam.CFrame:pointToWorldSpace(tempPos))
+									local screensize = cam.ViewportSize
+									local startVector = Vector2.new(screensize.X / 2, (TracersStartPosition["Value"] == "Middle" and screensize.Y / 2 or screensize.Y))
+									local endVector = Vector2.new(tracerPos.X, tracerPos.Y)
+									local Distance = (startVector - endVector).Magnitude
+									startVector = startVector
+									endVector = endVector
+									thing.Visible = true
+									thing.Transparency = 1 - TracersTransparency["Value"] / 100
+									thing.Color = getPlayerColor(plr) or Color3.fromHSV(TracersColor["Hue"], TracersColor["Sat"], TracersColor["Value"])
+									thing.From = startVector
+									thing.To = endVector
 								end
 							else
-								thing = Instance.new("Frame")
-								thing.BackgroundTransparency = 0
-								thing.AnchorPoint = Vector2.new(0.5, 0.5)
-								thing.BackgroundColor3 = Color3.new(0, 0, 0)
-								thing.BorderSizePixel = 0
-								thing.Visible = false
-								thing.Name = plr.Name
-								thing.Parent = TracersFolder
-							end
-
-							if isAlive(plr) and plr ~= lplr and (TracersTeammates["Enabled"] or shared.vapeteamcheck(plr)) then
-								local rootScrPos = cam:WorldToViewportPoint((TracersEndPosition["Value"] == "Head" and plr.Character.Head or plr.Character.HumanoidRootPart).Position)
-								local tempPos = cam.CFrame:pointToObjectSpace((TracersEndPosition["Value"] == "Head" and plr.Character.Head or plr.Character.HumanoidRootPart).Position)
-								if rootScrPos.Z < 0 then
-									tempPos = CFrame.Angles(0, 0, (math.atan2(tempPos.Y, tempPos.X) + math.pi)):vectorToWorldSpace((CFrame.Angles(0, math.rad(89.9), 0):vectorToWorldSpace(Vector3.new(0, 0, -1))));
+								if TracersFolder:FindFirstChild(plr.Name) then
+									thing = TracersFolder[plr.Name]
+									if thing.Visible then
+										thing.Visible = false
+									end
+								else
+									thing = Instance.new("Frame")
+									thing.BackgroundTransparency = 0
+									thing.AnchorPoint = Vector2.new(0.5, 0.5)
+									thing.BackgroundColor3 = Color3.new(0, 0, 0)
+									thing.BorderSizePixel = 0
+									thing.Visible = false
+									thing.Name = plr.Name
+									thing.Parent = TracersFolder
 								end
-								local tracerPos = cam:WorldToViewportPoint(cam.CFrame:pointToWorldSpace(tempPos))
-								local screensize = cam.ViewportSize
-								local startVector = Vector2.new(screensize.X / 2, (TracersStartPosition["Value"] == "Middle" and screensize.Y / 2 or screensize.Y))
-								local endVector = Vector2.new(tracerPos.X, tracerPos.Y)
-								local Distance = (startVector - endVector).Magnitude
-								startVector = startVector
-								endVector = endVector
-								thing.Visible = true
-								thing.BackgroundTransparency = TracersTransparency["Value"] / 100
-								thing.BackgroundColor3 = getPlayerColor(plr) or Color3.fromHSV(TracersColor["Hue"], TracersColor["Sat"], TracersColor["Value"])
-								thing.Size = UDim2.new(0, Distance, 0, 2)
-								thing.Position = UDim2.new(0, (startVector.X + endVector.X) / 2, 0, ((startVector.Y + endVector.Y) / 2) - 36)
-								thing.Rotation = math.atan2(endVector.Y - startVector.Y, endVector.X - startVector.X) * (180 / math.pi)
+								
+								local aliveplr = isAlive(plr)
+								if aliveplr and plr ~= lplr and (TracersTeammates["Enabled"] or shared.vapeteamcheck(plr)) then
+									local rootScrPos = cam:WorldToViewportPoint((TracersEndPosition["Value"] == "Head" and aliveplr.Head or aliveplr.RootPart).Position)
+									local tempPos = cam.CFrame:pointToObjectSpace((TracersEndPosition["Value"] == "Head" and aliveplr.Head or aliveplr.RootPart).Position)
+									if rootScrPos.Z < 0 then
+										tempPos = CFrame.Angles(0, 0, (math.atan2(tempPos.Y, tempPos.X) + math.pi)):vectorToWorldSpace((CFrame.Angles(0, math.rad(89.9), 0):vectorToWorldSpace(Vector3.new(0, 0, -1))));
+									end
+									local tracerPos = cam:WorldToViewportPoint(cam.CFrame:pointToWorldSpace(tempPos))
+									local screensize = cam.ViewportSize
+									local startVector = Vector2.new(screensize.X / 2, (TracersStartPosition["Value"] == "Middle" and screensize.Y / 2 or screensize.Y))
+									local endVector = Vector2.new(tracerPos.X, tracerPos.Y)
+									local Distance = (startVector - endVector).Magnitude
+									startVector = startVector
+									endVector = endVector
+									thing.Visible = true
+									thing.BackgroundTransparency = TracersTransparency["Value"] / 100
+									thing.BackgroundColor3 = getPlayerColor(plr) or Color3.fromHSV(TracersColor["Hue"], TracersColor["Sat"], TracersColor["Value"])
+									thing.Size = UDim2.new(0, Distance, 0, 2)
+									thing.Position = UDim2.new(0, (startVector.X + endVector.X) / 2, 0, ((startVector.Y + endVector.Y) / 2) - 36)
+									thing.Rotation = math.atan2(endVector.Y - startVector.Y, endVector.X - startVector.X) * (180 / math.pi)
+								end
 							end
 						end
-					end
 				end)
 			else
-				UnbindFromRenderStep("Tracers") 
+				RunLoops:UnbindFromRenderStep("Tracers") 
 				TracersFolder:ClearAllChildren()
 				for i,v in pairs(tracersdrawingtab) do 
 					pcall(function()
@@ -3184,6 +3209,10 @@ runcode(function()
 				end)
 			end
 		end
+	})
+	TracersAlive = Tracers.CreateToggle({
+		["Name"] = "Alive Check",
+		["Function"] = function() end
 	})
 end)
 
@@ -3370,7 +3399,7 @@ local PlayerState = {} do
 
 	function PlayerState.Pop()
 		cam.FieldOfView = cameraFieldOfView
-		cameraFieldOfView = nil
+        cameraFieldOfView = nil
 
 		cam.CameraType = cameraType
 		cameraType = nil
@@ -3403,7 +3432,7 @@ local Freecam = GuiLibrary["ObjectsThatCanBeSaved"]["WorldWindow"]["Api"].Create
 			panSpring:Reset(Vector2.new())
 
 			PlayerState.Push()
-			BindToRenderStep("Freecam", Enum.RenderPriority.Camera.Value, function(dt)
+			RunLoops:BindToRenderStep("Freecam", Enum.RenderPriority.Camera.Value, function(dt)
 				local vel = velSpring:Update(dt, Input.Vel(dt))
 				local pan = panSpring:Update(dt, Input.Pan(dt))
 
@@ -3422,7 +3451,7 @@ local Freecam = GuiLibrary["ObjectsThatCanBeSaved"]["WorldWindow"]["Api"].Create
 			Input.StartCapture()
 		else
 			Input.StopCapture()
-			UnbindFromRenderStep("Freecam")
+			RunLoops:UnbindFromRenderStep("Freecam")
 			PlayerState.Pop()
 		end
 	end,
@@ -3564,7 +3593,7 @@ runcode(function()
 						local ray = workspace:Raycast(entity.character.HumanoidRootPart.Position + vec, Vector3.new(0, -1000, 0), raycastparameters)
 						local ray2 = workspace:Raycast(entity.character.HumanoidRootPart.Position, Vector3.new(0, -entity.character.Humanoid.HipHeight * 2, 0), raycastparameters)
 						if ray == nil and ray2 then
-							vec = Vector3.new(0, 0, 0)
+							vec = Vector3.new()
 						end
 					end
 					return oldmove(Self, vec, facecam)
@@ -3586,14 +3615,14 @@ runcode(function()
 				vapecapeconnection = lplr.CharacterAdded:connect(function(char)
 					spawn(function()
 						pcall(function() 
-							Cape(char, getcustomassetfunc("Nemo/assets/VapeCape.png"))
+							Cape(char, getcustomassetfunc("vape/assets/VapeCape.png"))
 						end)
 					end)
 				end)
 				if lplr.Character then
 					spawn(function()
 						pcall(function() 
-							Cape(lplr.Character, getcustomassetfunc("Nemo/assets/VapeCape.png"))
+							Cape(lplr.Character, getcustomassetfunc("vape/assets/VapeCape.png"))
 						end)
 					end)
 				end
@@ -3631,13 +3660,13 @@ runcode(function()
 						entity.character.Humanoid:SetStateEnabled(v, false)
 					end
 					entity.character.Humanoid:ChangeState(Enum.HumanoidStateType.Swimming)
-					BindToStepped("Swim", 1, function()
-						entity.character.HumanoidRootPart.Velocity = ((entity.character.Humanoid.MoveDirection ~= Vector3.new(0, 0, 0) or entity.character.Humanoid.Jump) and entity.character.HumanoidRootPart.Velocity or Vector3.new(0, 0, 0))
+					RunLoops:BindToHeartbeat("Swim", 1, function()
+						entity.character.HumanoidRootPart.Velocity = ((entity.character.Humanoid.MoveDirection ~= Vector3.new() or entity.character.Humanoid.Jump) and entity.character.HumanoidRootPart.Velocity or Vector3.new())
 					end)
 				end
 			else 
 				workspace.Gravity = oldgravity
-				UnbindFromStepped("Swim")
+				RunLoops:UnbindFromHeartbeat("Swim")
 				if entity.isAlive then
 					local enums = Enum.HumanoidStateType:GetEnumItems()
 					table.remove(enums, table.find(enums, Enum.HumanoidStateType.None))
@@ -3704,3 +3733,60 @@ runcode(function()
 		["Default"] = 20
 	})
 end)
+
+--[[runcode(function()
+	local femboyconnection
+	GuiLibrary["ObjectsThatCanBeSaved"]["UtilityWindow"]["Api"].CreateOptionsButton({
+		["Name"] = "FemboyMode",
+		["Function"] = function(callback)
+			if callback then
+				local desc = Instance.new("HumanoidDescription")
+				local info = '{"SwimAnimation":1018554245,"JumpAnimation":754637084,"WalkAnimation":619512767,"RightLegColor":{"R":0.917647123336792,"B":0.572549045085907,"G":0.7215686440467835},"WidthScale":0.8799999952316284,"Face":236399287,"BodyTypeScale":0.6100000143051148,"RunAnimation":1018548665,"RightArmColor":{"R":0.917647123336792,"B":0.572549045085907,"G":0.7215686440467835},"ClimbAnimation":1018554668,"LeftArmColor":{"R":0.917647123336792,"B":0.572549045085907,"G":0.7215686440467835},"HeadColor":{"R":0.917647123336792,"B":0.572549045085907,"G":0.7215686440467835},"GraphicTShirt":0,"Torso":86499666,"HairAccessory":"8022084941","Head":86498113,"Shirt":0,"RightArm":86499698,"ProportionScale":0.12999999523162843,"RightLeg":27112068,"Pants":6474866173,"LeftLegColor":{"R":0.917647123336792,"B":0.572549045085907,"G":0.7215686440467835},"FallAnimation":754636589,"IdleAnimation":1018553897,"TorsoColor":{"R":0.917647123336792,"B":0.572549045085907,"G":0.7215686440467835},"DepthScale":0.9399999976158142,"LeftArm":86499716,"HeadScale":1,"HeightScale":1,"LeftLeg":27112056}'
+				local info2 = '[{"IsLayered":true,"Order":1,"AssetId":9367213925,"AccessoryType":{"Parent":"AccessoryType","EnumVal":"Shirt"}},{"IsLayered":true,"Order":1,"AssetId":9342333632,"AccessoryType":{"Parent":"AccessoryType","EnumVal":"DressSkirt"}},{"IsLayered":true,"Order":1,"AssetId":9239535402,"AccessoryType":{"Parent":"AccessoryType","EnumVal":"Pants"}},{"AssetId":8022084941,"AccessoryType":{"Parent":"AccessoryType","EnumVal":"Hair"},"IsLayered":false}]'
+				for i,v in pairs(game:GetService("HttpService"):JSONDecode(info)) do 
+					desc[i] = type(v) == "table" and Color3.new(v.R, v.G, v.B) or v
+				end
+				local newdesc = {}
+				for i,v in pairs(game:GetService("HttpService"):JSONDecode(info2)) do 
+					local newtab = {}
+					for i2,v2 in pairs(v) do 
+						newtab[i2] = type(v2) == "table" and Enum[v2.Parent][v2.EnumVal] or v2
+					end
+					newdesc[i] = newtab
+				end
+				desc:SetAccessories(newdesc, true)
+				if entity.isAlive then
+					for i,v in pairs(lplr.Character:GetChildren()) do 
+						if v:IsA("Shirt") or v:IsA("Pants") then 
+							v:Remove()
+						end
+					end
+					entity.character.Humanoid:ApplyDescriptionClientServer(desc)
+				end
+				femboyconnection = lplr.CharacterAdded:connect(function(char)
+					local hum = char:WaitForChild("Humanoid")
+					for i,v in pairs(char:GetChildren()) do 
+						if v:IsA("Shirt") or v:IsA("Pants") then 
+							v:Remove()
+						end
+					end
+					char.Humanoid:ApplyDescriptionClientServer(desc)
+				end)
+			else
+				if femboyconnection then
+					femboyconnection:Disconnect()
+				end
+				if entity.isAlive then
+					for i,v in pairs(lplr.Character:GetChildren()) do 
+						if v:IsA("Shirt") or v:IsA("Pants") then 
+							v:Remove()
+						end
+					end
+					local lplrdesc = players:GetHumanoidDescriptionFromUserId(lplr.UserId)
+					entity.character.Humanoid:ApplyDescriptionClientServer(lplrdesc)
+				end
+			end
+		end,
+		["HoverText"] = "femboy mode, will flag on all anticheats :troll: and remove most parts for everyone because fat roblox function"
+	})
+end)]]
