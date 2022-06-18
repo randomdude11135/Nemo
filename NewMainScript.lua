@@ -10,7 +10,7 @@ local function GetURL(scripturl)
 		if not betterisfile("Nemo/"..scripturl) then
 			error("File not found : Nemo/"..scripturl)
 		end
-		return readfile("Nemo/"..scripturl)
+		return readfile("vape/"..scripturl)
 	else
 		local res = game:HttpGet("https://rawgithubusercontent.com/randomdude11135/Nemo/main/"..scripturl, true)
 		assert(res ~= "404: Not Found", "File not found")
@@ -59,21 +59,13 @@ else
 	shared.VapeExecuted = true
 end
 
-if isfolder(customdir:gsub("/", "")) == false then
-	makefolder(customdir:gsub("/", ""))
-end
 if isfolder("Nemo") == false then
 	makefolder("Nemo")
 end
 if not betterisfile("Nemo/assetsversion.dat") then
 	writefile("Nemo/assetsversion.dat", "1")
 end
-if isfolder(customdir.."GameModules") == false then
-	makefolder(customdir.."GameModules")
-end
-if isfolder(customdir.."Profiles") == false then
-	makefolder(customdir.."Profiles")
-end
+
 if not betterisfile("Nemo/language.dat") then
 	local suc, res = pcall(function() return gethiddenproperty(game:GetService("Players").LocalPlayer, "ReplicatedLocaleId") end)
 	writefile("Nemo/language.dat", suc and res or "en-us")
@@ -321,7 +313,6 @@ ProfilesTextList = Profiles.CreateTextList({
 	end, 
 	["RemoveFunction"] = function(num, obj) 
 		if obj ~= "default" and obj ~= GuiLibrary["CurrentProfile"] then 
-			pcall(function() delfile(customdir.."Profiles/"..obj..(shared.CustomSaveVape or game.PlaceId)..".Nemoprofile.txt") end)
 			GuiLibrary["Profiles"][obj] = nil
 		else
 			table.insert(ProfilesTextList["ObjectList"], obj)
@@ -645,7 +636,6 @@ OnlineProfilesButton.MouseButton1Click:connect(function()
 					profiledownload.BackgroundColor3 = Color3.fromRGB(31, 30, 31)
 				end)
 				profiledownload.MouseButton1Click:connect(function()
-					writefile(customdir.."Profiles/"..v2["ProfileName"]..tostring(game.PlaceId)..".vapeprofile.txt", (shared.VapeDeveloper and readfile("vape/OnlineProfiles/"..v2["OnlineProfileName"]) or game:HttpGet("https://rawgithubusercontent.com/randomdude11135/Nemo/main/OnlineProfiles/"..v2["OnlineProfileName"], true)))
 					GuiLibrary["Profiles"][v2["ProfileName"]] = {["Keybind"] = "", ["Selected"] = false}
 					local profiles = {}
 					for i,v in pairs(GuiLibrary["Profiles"]) do 
@@ -1484,7 +1474,6 @@ GeneralSettings.CreateButton2({
 	["Function"] = function()
 		local vapeprivate = shared.VapePrivate
 		GuiLibrary["SelfDestruct"]()
-		delfile(customdir.."Profiles/"..(GuiLibrary["CurrentProfile"] == "default" and "" or GuiLibrary["CurrentProfile"])..game.PlaceId..".vapeprofile.txt")
 		shared.VapeSwitchServers = true
 		shared.VapeOpenGui = true
 		shared.VapePrivate = vapeprivate
