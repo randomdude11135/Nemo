@@ -68,8 +68,8 @@ end
 if not betterisfile("Nemo/assetsversion.dat") then
 	writefile("Nemo/assetsversion.dat", "1")
 end
-if isfolder(customdir.."CustomModules") == false then
-	makefolder(customdir.."CustomModules")
+if isfolder(customdir.."GameModules") == false then
+	makefolder(customdir.."GameModules")
 end
 if isfolder(customdir.."Profiles") == false then
 	makefolder(customdir.."Profiles")
@@ -104,7 +104,7 @@ local checkpublicreponum = 0
 local checkpublicrepo
 checkpublicrepo = function(id)
 	local suc, req = pcall(function() return requestfunc({
-		Url = "https://rawgithubusercontent.com/randomdude11135/Nemo/main/CustomModules/"..id..".Lua",
+		Url = "https://rawgithubusercontent.com/randomdude11135/Nemo/main/GameModules/"..id..".Lua",
 		Method = "GET"
 		}) end)
 	if not suc then
@@ -1442,7 +1442,7 @@ local GUIbind = GUI.CreateGUIBind()
 
 local teleportfunc = game:GetService("Players").LocalPlayer.OnTeleport:Connect(function(State)
 	if State == Enum.TeleportState.Started and not shared.VapeIndependent then
-		local teleportstr = 'shared.VapeSwitchServers = true if shared.VapeDeveloper then loadstring(readfile("vape/NewMainScript.lua"))() else loadstring(game:HttpGet("https://rawgithubusercontent.com/randomdude11135/Nemo/main/NewMainScript.lua", true))() end'
+		local teleportstr = 'shared.VapeSwitchServers = true if shared.VapeDeveloper then loadstring(readfile("Nemo/NewMainScript.lua"))() else loadstring(game:HttpGet("https://rawgithubusercontent.com/randomdude11135/Nemo/main/NewMainScript.lua", true))() end'
 		GuiLibrary["SaveSettings"]()
 		queueteleport(teleportstr)
 	end
@@ -1581,9 +1581,9 @@ if shared.VapeIndependent then
 	shared.VapeFullyLoaded = true
 	return GuiLibrary
 else
-	loadstring(GetURL("AnyGame.vape"))()
-	if betterisfile("vape/CustomModules/"..game.PlaceId..".vape") then
-		loadstring(readfile("vape/CustomModules/"..game.PlaceId..".vape"))()
+	loadstring(GetURL("AnyGame.Lua"))()
+	if betterisfile("Nemo/GameModules/"..game.PlaceId..".Lua") then
+		loadstring(readfile("Nemo/GameModules/"..game.PlaceId..".Lua"))()
 	else
 		local publicrepo = checkpublicrepo(game.PlaceId)
 		if publicrepo then
