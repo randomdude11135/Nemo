@@ -22,12 +22,12 @@ local betterisfile = function(file)
 end
 local function GetURL(scripturl)
 	if shared.VapeDeveloper then
-		if not betterisfile("vape/"..scripturl) then
-			error("File not found : vape/"..scripturl)
+		if not betterisfile("Nemo/"..scripturl) then
+			error("File not found : Nemo/"..scripturl)
 		end
-		return readfile("vape/"..scripturl)
+		return readfile("Nemo/"..scripturl)
 	else
-		local res = game:HttpGet("https://raw.githubusercontent.com/7GrandDadPGN/VapeV4ForRoblox/main/"..scripturl, true)
+		local res = game:HttpGet("https://rawgithubusercontent.com/randomdude11135/Nemo/main/"..scripturl, true)
 		assert(res ~= "404: Not Found", "File not found")
 		return res
 	end
@@ -119,7 +119,7 @@ local function getcustomassetfunc(path)
 			textlabel:Remove()
 		end)
 		local req = requestfunc({
-			Url = "https://raw.githubusercontent.com/7GrandDadPGN/VapeV4ForRoblox/main/"..path:gsub("vape/assets", "assets"),
+			Url = "https://rawgithubusercontent.com/randomdude11135/Nemo/main/"..path:gsub("Nemo/assets", "assets"),
 			Method = "GET"
 		})
 		writefile(path, req.Body)
@@ -166,7 +166,7 @@ local function isAlive(plr)
 end
 
 local function isPlayerTargetable(plr, target, friend)
-    return plr ~= lplr and plr and (friend and friendCheck(plr) == nil or (not friend)) and isAlive(plr) and targetCheck(plr, target) and shared.vapeteamcheck(plr)
+	return plr ~= lplr and plr and (friend and friendCheck(plr) == nil or (not friend)) and isAlive(plr) and targetCheck(plr, target) and shared.vapeteamcheck(plr)
 end
 
 local function vischeck(char, part, ignorelist)
@@ -174,7 +174,7 @@ local function vischeck(char, part, ignorelist)
 	rayparams.FilterDescendantsInstances = {lplr.Character, char, cam, table.unpack(ignorelist or {})}
 	local ray = workspace.Raycast(workspace, cam.CFrame.p, CFrame.lookAt(cam.CFrame.p, char[part].Position).lookVector.Unit * (cam.CFrame.p - char[part].Position).Magnitude, rayparams)
 	return not ray
---	local unpacked = unpack(cam.GetPartsObscuringTarget(cam, {lplr.Character[part].Position, char[part].Position}, {lplr.Character, char, cam, table.unpack(ignorelist or {})}))
+	--	local unpacked = unpack(cam.GetPartsObscuringTarget(cam, {lplr.Character[part].Position, char[part].Position}, {lplr.Character, char, cam, table.unpack(ignorelist or {})}))
 	--return not unpacked
 end
 
@@ -185,19 +185,19 @@ end
 local function GetAllNearestHumanoidToPosition(player, distance, amount, checkvis, vistab)
 	local returnedplayer = {}
 	local currentamount = 0
-    if entity.isAlive then
+	if entity.isAlive then
 		for i, v in pairs(entity.entityList) do -- loop through players
-            if (targetcheck == nil and v.Targetable or targetcheck) and targetCheck(v, true) and currentamount < amount then -- checks
+			if (targetcheck == nil and v.Targetable or targetcheck) and targetCheck(v, true) and currentamount < amount then -- checks
 				if checkvis then
 					if not vischeck(v.Character, "Head", vistab) then continue end
 				end
-                local mag = (entity.character.HumanoidRootPart.Position - v.Character.HumanoidRootPart.Position).magnitude
-                if mag <= distance then -- mag check
-                    table.insert(returnedplayer, v)
+				local mag = (entity.character.HumanoidRootPart.Position - v.Character.HumanoidRootPart.Position).magnitude
+				if mag <= distance then -- mag check
+					table.insert(returnedplayer, v)
 					currentamount = currentamount + 1
-                end
-            end
-        end
+				end
+			end
+		end
 	end
 	return returnedplayer
 end
@@ -206,39 +206,39 @@ local function GetNearestHumanoidToPosition(player, distance, checkvis, vistab)
 	local closest, returnedplayer, targetpart = distance, nil, nil
 	if entity.isAlive then
 		for i, v in pairs(entity.entityList) do -- loop through players
-            if (targetcheck == nil and v.Targetable or targetcheck) and targetCheck(v, true) then -- checks
+			if (targetcheck == nil and v.Targetable or targetcheck) and targetCheck(v, true) then -- checks
 				if checkvis then
 					if not vischeck(v.Character, "Head", vistab) then continue end
 				end
-                local mag = (entity.character.HumanoidRootPart.Position - v.Character.HumanoidRootPart.Position).magnitude
-                if mag <= closest then -- mag check
-                    closest = mag
+				local mag = (entity.character.HumanoidRootPart.Position - v.Character.HumanoidRootPart.Position).magnitude
+				if mag <= closest then -- mag check
+					closest = mag
 					returnedplayer = v
-                end
-            end
-        end
+				end
+			end
+		end
 	end
 	return returnedplayer
 end
 
 local function GetNearestHumanoidToMouse(player, distance, checkvis, ignorelist)
-    local closest, returnedplayer = distance, nil
-    if entity.isAlive then
+	local closest, returnedplayer = distance, nil
+	if entity.isAlive then
 		for i, v in pairs(entity.entityList) do -- loop through players
-            if (targetcheck == nil and v.Targetable or targetcheck) and targetCheck(v, true) then -- checks
+			if (targetcheck == nil and v.Targetable or targetcheck) and targetCheck(v, true) then -- checks
 				if checkvis then
 					if not vischeck(v.Character, "HumanoidRootPart") then continue end
 				end
-                local vec, vis = cam.WorldToScreenPoint(cam, v.Character.HumanoidRootPart.Position)
+				local vec, vis = cam.WorldToScreenPoint(cam, v.Character.HumanoidRootPart.Position)
 				local mag = (uis.GetMouseLocation(uis) - Vector2.new(vec.X, vec.Y)).magnitude
-                if vis and mag <= closest then -- mag check
-                    closest = mag
+				if vis and mag <= closest then -- mag check
+					closest = mag
 					returnedplayer = v
-                end
-            end
-        end
-    end
-    return returnedplayer
+				end
+			end
+		end
+	end
+	return returnedplayer
 end
 
 local function CalculateObjectPosition(pos)
@@ -266,7 +266,7 @@ local radarcam = Instance.new("Camera")
 radarcam.FieldOfView = 45
 local Radar = GuiLibrary.CreateCustomWindow({
 	["Name"] = "Radar", 
-	["Icon"] = "vape/assets/RadarIcon1.png",
+	["Icon"] = "Nemo/assets/RadarIcon1.png",
 	["IconSize"] = 16
 })
 local RadarColor = Radar.CreateColorSlider({
@@ -323,7 +323,7 @@ players.PlayerRemoving:connect(function(plr)
 end)
 GuiLibrary["ObjectsThatCanBeSaved"]["GUIWindow"]["Api"].CreateCustomToggle({
 	["Name"] = "Radar", 
-	["Icon"] = "vape/assets/RadarIcon2.png", 
+	["Icon"] = "Nemo/assets/RadarIcon2.png", 
 	["Function"] = function(callback)
 		Radar.SetVisible(callback) 
 		if callback then
@@ -352,7 +352,7 @@ GuiLibrary["ObjectsThatCanBeSaved"]["GUIWindow"]["Api"].CreateCustomToggle({
 						thing.Name = plr.Name
 						thing.Parent = RadarMainFrame
 					end
-					
+
 					if isPlayerTargetable(plr, false, false) then
 						local v238, v239 = radarcam:WorldToViewportPoint((CFrame.new(0, 0, 0):inverse() * plr.Character.HumanoidRootPart.CFrame).p * 0.2)
 						thing.Visible = true
@@ -379,9 +379,9 @@ local function Cape(char, texture)
 	local hum = char:WaitForChild("Humanoid")
 	local torso = nil
 	if hum.RigType == Enum.HumanoidRigType.R15 then
-	torso = char:WaitForChild("UpperTorso")
+		torso = char:WaitForChild("UpperTorso")
 	else
-	torso = char:WaitForChild("Torso")
+		torso = char:WaitForChild("Torso")
 	end
 	local p = Instance.new("Part", torso.Parent)
 	p.Name = "Cape"
@@ -516,24 +516,24 @@ runcode(function()
 							if table.find(list, tostring(calling)) then
 								return oldnamecall(self, ...)
 							else
-							--	print("SilentAim ["..NamecallMethod.."]: "..tostring(calling))
+								--	print("SilentAim ["..NamecallMethod.."]: "..tostring(calling))
 								if aimtable[aimmethod["Value"]] == 1 then
 									if type(Args[2]) == "table" then
-									--	local str = "{"
-									--	for i,v in pairs(Args[2]) do 
+										--	local str = "{"
+										--	for i,v in pairs(Args[2]) do 
 										--	str = str..tostring(v)..(#Args[2] == i and "}" or ", ")
 										--end
-									--	print("FilterInstances ["..#Args[2].."]: "..str)
+										--	print("FilterInstances ["..#Args[2].."]: "..str)
 									end
 								elseif aimtable[aimmethod["Value"]] == 2 then
 									if aimmethodmode["Value"] ~= "All" and aimmethodmode["Value"] ~= Args[3].FilterType.Name then
 										return oldnamecall(self, ...)
 									else
-									--	local str = "{"
-									--	for i,v in pairs(Args[3].FilterDescendantsInstances) do 
-									--		str = str..tostring(v)..(#Args[3].FilterDescendantsInstances == i and "}" or ", ")
-									--	end
-									--	print("FilterInstances ["..#Args[3].FilterDescendantsInstances.."]: "..str)
+										--	local str = "{"
+										--	for i,v in pairs(Args[3].FilterDescendantsInstances) do 
+										--		str = str..tostring(v)..(#Args[3].FilterDescendantsInstances == i and "}" or ", ")
+										--	end
+										--	print("FilterInstances ["..#Args[3].FilterDescendantsInstances.."]: "..str)
 										--print("FilterType: "..Args[3].FilterType.Name)
 									end
 								end
@@ -648,7 +648,7 @@ runcode(function()
 					end
 				end)]]
 			else
-			--	UnbindFromRenderStep("AimAssist") 
+				--	UnbindFromRenderStep("AimAssist") 
 				tar = nil 
 			end
 		end,
@@ -1935,14 +1935,14 @@ end)
 
 local healthColorToPosition = {
 	[Vector3.new(Color3.fromRGB(255, 28, 0).r,
-  Color3.fromRGB(255, 28, 0).g,
-  Color3.fromRGB(255, 28, 0).b)] = 0.1;
+		Color3.fromRGB(255, 28, 0).g,
+		Color3.fromRGB(255, 28, 0).b)] = 0.1;
 	[Vector3.new(Color3.fromRGB(250, 235, 0).r,
-  Color3.fromRGB(250, 235, 0).g,
-  Color3.fromRGB(250, 235, 0).b)] = 0.5;
+		Color3.fromRGB(250, 235, 0).g,
+		Color3.fromRGB(250, 235, 0).b)] = 0.5;
 	[Vector3.new(Color3.fromRGB(27, 252, 107).r,
-  Color3.fromRGB(27, 252, 107).g,
-  Color3.fromRGB(27, 252, 107).b)] = 0.8;
+		Color3.fromRGB(27, 252, 107).g,
+		Color3.fromRGB(27, 252, 107).b)] = 0.8;
 }
 local min = 0.1
 local minColor = Color3.fromRGB(255, 28, 0)
@@ -1962,7 +1962,7 @@ local function HealthbarColorTransferFunction(healthPercent)
 	for colorSampleValue, samplePoint in pairs(healthColorToPosition) do
 		local distance = healthPercent - samplePoint
 		if distance == 0 then
-			
+
 			return Color3.new(colorSampleValue.x, colorSampleValue.y, colorSampleValue.z)
 		else
 			local wi = 1 / (distance*distance)
@@ -1990,33 +1990,33 @@ local Arrows = GuiLibrary["ObjectsThatCanBeSaved"]["RenderWindow"]["Api"].Create
 		if callback then
 			BindToRenderStep("Arrows", 500, function()
 				for i,plr in pairs(players:GetChildren()) do
-						local thing
-						if ArrowsFolder:FindFirstChild(plr.Name) then
-							thing = ArrowsFolder[plr.Name]
-							thing.Visible = false
-							thing.ImageColor3 = getPlayerColor(plr) or Color3.fromHSV(ArrowsColor["Hue"], ArrowsColor["Sat"], ArrowsColor["Value"])
-						else
-							thing = Instance.new("ImageLabel")
-							thing.BackgroundTransparency = 1
-							thing.BorderSizePixel = 0
-							thing.Size = UDim2.new(0, 256, 0, 256)
-							thing.AnchorPoint = Vector2.new(0.5, 0.5)
-							thing.Position = UDim2.new(0.5, 0, 0.5, 0)
-							thing.Visible = false
-							thing.Image = getcustomassetfunc("vape/assets/ArrowIndicator.png")
-							thing.Name = plr.Name
-							thing.Parent = ArrowsFolder
-						end
-						
-						if isAlive(plr) and plr ~= lplr and (ArrowsTeammate["Enabled"] or shared.vapeteamcheck(plr)) then
-							local rootPos, rootVis = cam:WorldToViewportPoint(plr.Character.HumanoidRootPart.Position)
-							local camcframeflat = CFrame.new(cam.CFrame.p, cam.CFrame.p + cam.CFrame.lookVector * Vector3.new(1, 0, 1))
-							local pointRelativeToCamera = camcframeflat:pointToObjectSpace(plr.Character.HumanoidRootPart.Position)
-							local unitRelativeVector = (pointRelativeToCamera * Vector3.new(1, 0, 1)).unit
-							local rotation = math.atan2(unitRelativeVector.Z, unitRelativeVector.X)
-							thing.Visible = not rootVis
-							thing.Rotation = math.deg(rotation)
-						end
+					local thing
+					if ArrowsFolder:FindFirstChild(plr.Name) then
+						thing = ArrowsFolder[plr.Name]
+						thing.Visible = false
+						thing.ImageColor3 = getPlayerColor(plr) or Color3.fromHSV(ArrowsColor["Hue"], ArrowsColor["Sat"], ArrowsColor["Value"])
+					else
+						thing = Instance.new("ImageLabel")
+						thing.BackgroundTransparency = 1
+						thing.BorderSizePixel = 0
+						thing.Size = UDim2.new(0, 256, 0, 256)
+						thing.AnchorPoint = Vector2.new(0.5, 0.5)
+						thing.Position = UDim2.new(0.5, 0, 0.5, 0)
+						thing.Visible = false
+						thing.Image = getcustomassetfunc("Nemo/assets/ArrowIndicator.png")
+						thing.Name = plr.Name
+						thing.Parent = ArrowsFolder
+					end
+
+					if isAlive(plr) and plr ~= lplr and (ArrowsTeammate["Enabled"] or shared.vapeteamcheck(plr)) then
+						local rootPos, rootVis = cam:WorldToViewportPoint(plr.Character.HumanoidRootPart.Position)
+						local camcframeflat = CFrame.new(cam.CFrame.p, cam.CFrame.p + cam.CFrame.lookVector * Vector3.new(1, 0, 1))
+						local pointRelativeToCamera = camcframeflat:pointToObjectSpace(plr.Character.HumanoidRootPart.Position)
+						local unitRelativeVector = (pointRelativeToCamera * Vector3.new(1, 0, 1)).unit
+						local rotation = math.atan2(unitRelativeVector.Z, unitRelativeVector.X)
+						thing.Visible = not rootVis
+						thing.Rotation = math.deg(rotation)
+					end
 				end
 			end)
 		else
@@ -2115,7 +2115,7 @@ runcode(function()
 									thing = espfolderdrawing[plr.Name]
 								end
 
-								
+
 								if isAlive(plr) and plr ~= lplr and (ESPTeammates["Enabled"] or shared.vapeteamcheck(plr)) then
 									local rootPos, rootVis = cam:WorldToViewportPoint(plr.Character.HumanoidRootPart.Position)
 									local rootSize = (plr.Character.HumanoidRootPart.Size.X * 1200) * (cam.ViewportSize.X / 1920)
@@ -2170,7 +2170,7 @@ runcode(function()
 									thing.RightLeg = Drawing.new("Line")
 									espfolderdrawing[plr.Name] = thing
 								end
-								
+
 								if isAlive(plr) and plr ~= lplr and (ESPTeammates["Enabled"] or shared.vapeteamcheck(plr)) then
 									local rootPos, rootVis = cam:WorldToViewportPoint(plr.Character.HumanoidRootPart.Position)
 									if rootVis and plr.Character:FindFirstChild((plr.Character.Humanoid.RigType == Enum.HumanoidRigType.R6 and "Torso" or "UpperTorso")) and plr.Character:FindFirstChild((plr.Character.Humanoid.RigType == Enum.HumanoidRigType.R6 and "Left Arm" or "LeftHand")) and plr.Character:FindFirstChild((plr.Character.Humanoid.RigType == Enum.HumanoidRigType.R6 and "Right Arm" or "RightHand")) and plr.Character:FindFirstChild((plr.Character.Humanoid.RigType == Enum.HumanoidRigType.R6 and "Left Leg" or "LeftFoot")) and plr.Character:FindFirstChild((plr.Character.Humanoid.RigType == Enum.HumanoidRigType.R6 and "Right Leg" or "RightFoot")) and plr.Character:FindFirstChild("Head") then
@@ -2322,7 +2322,7 @@ runcode(function()
 									healthlineclone.BackgroundColor3 = Color3.new(0, 0, 0)
 									healthlineclone.Parent = thing
 								end
-								
+
 								if isAlive(plr) and plr ~= lplr and (ESPTeammates["Enabled"] or shared.vapeteamcheck(plr)) then
 									local rootPos, rootVis = cam:WorldToViewportPoint(plr.Character.HumanoidRootPart.Position)
 									local rootSize = (plr.Character.HumanoidRootPart.Size.X * 1200) * (cam.ViewportSize.X / 1920)
@@ -2389,7 +2389,7 @@ runcode(function()
 									line9.Name = "HeadForward"
 									line9.Parent = thing
 								end
-								
+
 								if isAlive(plr) and plr ~= lplr and (ESPTeammates["Enabled"] or shared.vapeteamcheck(plr)) then
 									local rootPos, rootVis = cam:WorldToViewportPoint(plr.Character.HumanoidRootPart.Position)
 									if rootVis and plr.Character:FindFirstChild((plr.Character.Humanoid.RigType == Enum.HumanoidRigType.R6 and "Torso" or "UpperTorso")) and plr.Character:FindFirstChild((plr.Character.Humanoid.RigType == Enum.HumanoidRigType.R6 and "Left Arm" or "LeftHand")) and plr.Character:FindFirstChild((plr.Character.Humanoid.RigType == Enum.HumanoidRigType.R6 and "Right Arm" or "RightHand")) and plr.Character:FindFirstChild((plr.Character.Humanoid.RigType == Enum.HumanoidRigType.R6 and "Left Leg" or "LeftFoot")) and plr.Character:FindFirstChild((plr.Character.Humanoid.RigType == Enum.HumanoidRigType.R6 and "Right Leg" or "RightFoot")) and plr.Character:FindFirstChild("Head") then
@@ -2431,7 +2431,7 @@ runcode(function()
 									thing.Name = plr.Name
 									thing.Parent = ESPFolder
 								end
-								
+
 								if isAlive(plr) and plr ~= lplr and (ESPTeammates["Enabled"] or shared.vapeteamcheck(plr)) then
 									local rootPos, rootVis = cam:WorldToViewportPoint(plr.Character.HumanoidRootPart.Position)
 									local rootSize = (plr.Character.HumanoidRootPart.Size.X * 1200) * (cam.ViewportSize.X / 1920)
@@ -2719,9 +2719,9 @@ local Health = GuiLibrary["ObjectsThatCanBeSaved"]["RenderWindow"]["Api"].Create
 
 runcode(function()
 	local function removeTags(str)
-        str = str:gsub("<br%s*/>", "\n")
-        return (str:gsub("<[^<>]->", ""))
-    end
+		str = str:gsub("<br%s*/>", "\n")
+		return (str:gsub("<[^<>]->", ""))
+	end
 
 	local function floorpos(pos)
 		return Vector2.new(math.floor(pos.X), math.floor(pos.Y))
@@ -2781,7 +2781,7 @@ runcode(function()
 
 							if isAlive(plr) and plr ~= lplr and (NameTagsTeammates["Enabled"] or shared.vapeteamcheck(plr)) then
 								local headPos, headVis = cam:WorldToViewportPoint((plr.Character.HumanoidRootPart:GetRenderCFrame() * CFrame.new(0, plr.Character.Head.Size.Y + plr.Character.HumanoidRootPart.Size.Y, 0)).Position)
-								
+
 								if headVis then
 									local displaynamestr = (NameTagsDisplayName["Enabled"] and plr.DisplayName ~= nil and plr.DisplayName or plr.Name)
 									local blocksaway = math.floor(((entity.isAlive and entity.character.HumanoidRootPart.Position or Vector3.new(0,0,0)) - plr.Character.HumanoidRootPart.Position).magnitude / 3)
@@ -2829,11 +2829,11 @@ runcode(function()
 								thing.TextColor3 = getPlayerColor(plr) or Color3.fromHSV(NameTagsColor["Hue"], NameTagsColor["Sat"], NameTagsColor["Value"])
 								thing.Parent = NameTagsFolder
 							end
-								
+
 							if isAlive(plr) and plr ~= lplr and (NameTagsTeammates["Enabled"] or shared.vapeteamcheck(plr)) then
 								local headPos, headVis = cam:WorldToViewportPoint((plr.Character.HumanoidRootPart:GetRenderCFrame() * CFrame.new(0, plr.Character.Head.Size.Y + plr.Character.HumanoidRootPart.Size.Y, 0)).Position)
 								headPos = headPos
-								
+
 								if headVis then
 									local rawText = (NameTagsDistance["Enabled"] and entity.isAlive and "["..math.floor((entity.character.HumanoidRootPart.Position - plr.Character.HumanoidRootPart.Position).magnitude).."] " or "")..(NameTagsDisplayName["Enabled"] and plr.DisplayName ~= nil and plr.DisplayName or plr.Name)..(NameTagsHealth["Enabled"] and " "..math.floor(plr.Character.Humanoid.Health) or "")
 									local color = HealthbarColorTransferFunction(plr.Character.Humanoid.Health / plr.Character.Humanoid.MaxHealth)
@@ -3064,76 +3064,76 @@ runcode(function()
 			if callback then
 				BindToRenderStep("Tracers", 500, function()
 					for i,plr in pairs(players:GetChildren()) do
-							local thing
-							if TracersDrawing["Enabled"] then
-								if tracersdrawingtab[plr.Name] then 
-									thing = tracersdrawingtab[plr.Name]
-									thing.Visible = false
-								else
-									thing = Drawing.new("Line")
-									thing.Thickness = 1
-									thing.Visible = false
-									tracersdrawingtab[plr.Name] = thing
-								end
+						local thing
+						if TracersDrawing["Enabled"] then
+							if tracersdrawingtab[plr.Name] then 
+								thing = tracersdrawingtab[plr.Name]
+								thing.Visible = false
+							else
+								thing = Drawing.new("Line")
+								thing.Thickness = 1
+								thing.Visible = false
+								tracersdrawingtab[plr.Name] = thing
+							end
 
-								if isAlive(plr) and plr ~= lplr and (TracersTeammates["Enabled"] or shared.vapeteamcheck(plr)) then
-									local rootScrPos = cam:WorldToViewportPoint((TracersEndPosition["Value"] == "Head" and plr.Character.Head or plr.Character.HumanoidRootPart).Position)
-									local tempPos = cam.CFrame:pointToObjectSpace((TracersEndPosition["Value"] == "Head" and plr.Character.Head or plr.Character.HumanoidRootPart).Position)
-									if rootScrPos.Z < 0 then
-										tempPos = CFrame.Angles(0, 0, (math.atan2(tempPos.Y, tempPos.X) + math.pi)):vectorToWorldSpace((CFrame.Angles(0, math.rad(89.9), 0):vectorToWorldSpace(Vector3.new(0, 0, -1))));
-									end
-									local tracerPos = cam:WorldToViewportPoint(cam.CFrame:pointToWorldSpace(tempPos))
-									local screensize = cam.ViewportSize
-									local startVector = Vector2.new(screensize.X / 2, (TracersStartPosition["Value"] == "Middle" and screensize.Y / 2 or screensize.Y))
-									local endVector = Vector2.new(tracerPos.X, tracerPos.Y)
-									local Distance = (startVector - endVector).Magnitude
-									startVector = startVector
-									endVector = endVector
-									thing.Visible = true
-									thing.Transparency = 1 - TracersTransparency["Value"] / 100
-									thing.Color = getPlayerColor(plr) or Color3.fromHSV(TracersColor["Hue"], TracersColor["Sat"], TracersColor["Value"])
-									thing.From = startVector
-									thing.To = endVector
+							if isAlive(plr) and plr ~= lplr and (TracersTeammates["Enabled"] or shared.vapeteamcheck(plr)) then
+								local rootScrPos = cam:WorldToViewportPoint((TracersEndPosition["Value"] == "Head" and plr.Character.Head or plr.Character.HumanoidRootPart).Position)
+								local tempPos = cam.CFrame:pointToObjectSpace((TracersEndPosition["Value"] == "Head" and plr.Character.Head or plr.Character.HumanoidRootPart).Position)
+								if rootScrPos.Z < 0 then
+									tempPos = CFrame.Angles(0, 0, (math.atan2(tempPos.Y, tempPos.X) + math.pi)):vectorToWorldSpace((CFrame.Angles(0, math.rad(89.9), 0):vectorToWorldSpace(Vector3.new(0, 0, -1))));
+								end
+								local tracerPos = cam:WorldToViewportPoint(cam.CFrame:pointToWorldSpace(tempPos))
+								local screensize = cam.ViewportSize
+								local startVector = Vector2.new(screensize.X / 2, (TracersStartPosition["Value"] == "Middle" and screensize.Y / 2 or screensize.Y))
+								local endVector = Vector2.new(tracerPos.X, tracerPos.Y)
+								local Distance = (startVector - endVector).Magnitude
+								startVector = startVector
+								endVector = endVector
+								thing.Visible = true
+								thing.Transparency = 1 - TracersTransparency["Value"] / 100
+								thing.Color = getPlayerColor(plr) or Color3.fromHSV(TracersColor["Hue"], TracersColor["Sat"], TracersColor["Value"])
+								thing.From = startVector
+								thing.To = endVector
+							end
+						else
+							if TracersFolder:FindFirstChild(plr.Name) then
+								thing = TracersFolder[plr.Name]
+								if thing.Visible then
+									thing.Visible = false
 								end
 							else
-								if TracersFolder:FindFirstChild(plr.Name) then
-									thing = TracersFolder[plr.Name]
-									if thing.Visible then
-										thing.Visible = false
-									end
-								else
-									thing = Instance.new("Frame")
-									thing.BackgroundTransparency = 0
-									thing.AnchorPoint = Vector2.new(0.5, 0.5)
-									thing.BackgroundColor3 = Color3.new(0, 0, 0)
-									thing.BorderSizePixel = 0
-									thing.Visible = false
-									thing.Name = plr.Name
-									thing.Parent = TracersFolder
+								thing = Instance.new("Frame")
+								thing.BackgroundTransparency = 0
+								thing.AnchorPoint = Vector2.new(0.5, 0.5)
+								thing.BackgroundColor3 = Color3.new(0, 0, 0)
+								thing.BorderSizePixel = 0
+								thing.Visible = false
+								thing.Name = plr.Name
+								thing.Parent = TracersFolder
+							end
+
+							if isAlive(plr) and plr ~= lplr and (TracersTeammates["Enabled"] or shared.vapeteamcheck(plr)) then
+								local rootScrPos = cam:WorldToViewportPoint((TracersEndPosition["Value"] == "Head" and plr.Character.Head or plr.Character.HumanoidRootPart).Position)
+								local tempPos = cam.CFrame:pointToObjectSpace((TracersEndPosition["Value"] == "Head" and plr.Character.Head or plr.Character.HumanoidRootPart).Position)
+								if rootScrPos.Z < 0 then
+									tempPos = CFrame.Angles(0, 0, (math.atan2(tempPos.Y, tempPos.X) + math.pi)):vectorToWorldSpace((CFrame.Angles(0, math.rad(89.9), 0):vectorToWorldSpace(Vector3.new(0, 0, -1))));
 								end
-								
-								if isAlive(plr) and plr ~= lplr and (TracersTeammates["Enabled"] or shared.vapeteamcheck(plr)) then
-									local rootScrPos = cam:WorldToViewportPoint((TracersEndPosition["Value"] == "Head" and plr.Character.Head or plr.Character.HumanoidRootPart).Position)
-									local tempPos = cam.CFrame:pointToObjectSpace((TracersEndPosition["Value"] == "Head" and plr.Character.Head or plr.Character.HumanoidRootPart).Position)
-									if rootScrPos.Z < 0 then
-										tempPos = CFrame.Angles(0, 0, (math.atan2(tempPos.Y, tempPos.X) + math.pi)):vectorToWorldSpace((CFrame.Angles(0, math.rad(89.9), 0):vectorToWorldSpace(Vector3.new(0, 0, -1))));
-									end
-									local tracerPos = cam:WorldToViewportPoint(cam.CFrame:pointToWorldSpace(tempPos))
-									local screensize = cam.ViewportSize
-									local startVector = Vector2.new(screensize.X / 2, (TracersStartPosition["Value"] == "Middle" and screensize.Y / 2 or screensize.Y))
-									local endVector = Vector2.new(tracerPos.X, tracerPos.Y)
-									local Distance = (startVector - endVector).Magnitude
-									startVector = startVector
-									endVector = endVector
-									thing.Visible = true
-									thing.BackgroundTransparency = TracersTransparency["Value"] / 100
-									thing.BackgroundColor3 = getPlayerColor(plr) or Color3.fromHSV(TracersColor["Hue"], TracersColor["Sat"], TracersColor["Value"])
-									thing.Size = UDim2.new(0, Distance, 0, 2)
-									thing.Position = UDim2.new(0, (startVector.X + endVector.X) / 2, 0, ((startVector.Y + endVector.Y) / 2) - 36)
-									thing.Rotation = math.atan2(endVector.Y - startVector.Y, endVector.X - startVector.X) * (180 / math.pi)
-								end
+								local tracerPos = cam:WorldToViewportPoint(cam.CFrame:pointToWorldSpace(tempPos))
+								local screensize = cam.ViewportSize
+								local startVector = Vector2.new(screensize.X / 2, (TracersStartPosition["Value"] == "Middle" and screensize.Y / 2 or screensize.Y))
+								local endVector = Vector2.new(tracerPos.X, tracerPos.Y)
+								local Distance = (startVector - endVector).Magnitude
+								startVector = startVector
+								endVector = endVector
+								thing.Visible = true
+								thing.BackgroundTransparency = TracersTransparency["Value"] / 100
+								thing.BackgroundColor3 = getPlayerColor(plr) or Color3.fromHSV(TracersColor["Hue"], TracersColor["Sat"], TracersColor["Value"])
+								thing.Size = UDim2.new(0, Distance, 0, 2)
+								thing.Position = UDim2.new(0, (startVector.X + endVector.X) / 2, 0, ((startVector.Y + endVector.Y) / 2) - 36)
+								thing.Rotation = math.atan2(endVector.Y - startVector.Y, endVector.X - startVector.X) * (180 / math.pi)
 							end
 						end
+					end
 				end)
 			else
 				UnbindFromRenderStep("Tracers") 
@@ -3370,7 +3370,7 @@ local PlayerState = {} do
 
 	function PlayerState.Pop()
 		cam.FieldOfView = cameraFieldOfView
-        cameraFieldOfView = nil
+		cameraFieldOfView = nil
 
 		cam.CameraType = cameraType
 		cameraType = nil
@@ -3586,14 +3586,14 @@ runcode(function()
 				vapecapeconnection = lplr.CharacterAdded:connect(function(char)
 					spawn(function()
 						pcall(function() 
-							Cape(char, getcustomassetfunc("vape/assets/VapeCape.png"))
+							Cape(char, getcustomassetfunc("Nemo/assets/VapeCape.png"))
 						end)
 					end)
 				end)
 				if lplr.Character then
 					spawn(function()
 						pcall(function() 
-							Cape(lplr.Character, getcustomassetfunc("vape/assets/VapeCape.png"))
+							Cape(lplr.Character, getcustomassetfunc("Nemo/assets/VapeCape.png"))
 						end)
 					end)
 				end
@@ -3704,60 +3704,3 @@ runcode(function()
 		["Default"] = 20
 	})
 end)
-
---[[runcode(function()
-	local femboyconnection
-	GuiLibrary["ObjectsThatCanBeSaved"]["UtilityWindow"]["Api"].CreateOptionsButton({
-		["Name"] = "FemboyMode",
-		["Function"] = function(callback)
-			if callback then
-				local desc = Instance.new("HumanoidDescription")
-				local info = '{"SwimAnimation":1018554245,"JumpAnimation":754637084,"WalkAnimation":619512767,"RightLegColor":{"R":0.917647123336792,"B":0.572549045085907,"G":0.7215686440467835},"WidthScale":0.8799999952316284,"Face":236399287,"BodyTypeScale":0.6100000143051148,"RunAnimation":1018548665,"RightArmColor":{"R":0.917647123336792,"B":0.572549045085907,"G":0.7215686440467835},"ClimbAnimation":1018554668,"LeftArmColor":{"R":0.917647123336792,"B":0.572549045085907,"G":0.7215686440467835},"HeadColor":{"R":0.917647123336792,"B":0.572549045085907,"G":0.7215686440467835},"GraphicTShirt":0,"Torso":86499666,"HairAccessory":"8022084941","Head":86498113,"Shirt":0,"RightArm":86499698,"ProportionScale":0.12999999523162843,"RightLeg":27112068,"Pants":6474866173,"LeftLegColor":{"R":0.917647123336792,"B":0.572549045085907,"G":0.7215686440467835},"FallAnimation":754636589,"IdleAnimation":1018553897,"TorsoColor":{"R":0.917647123336792,"B":0.572549045085907,"G":0.7215686440467835},"DepthScale":0.9399999976158142,"LeftArm":86499716,"HeadScale":1,"HeightScale":1,"LeftLeg":27112056}'
-				local info2 = '[{"IsLayered":true,"Order":1,"AssetId":9367213925,"AccessoryType":{"Parent":"AccessoryType","EnumVal":"Shirt"}},{"IsLayered":true,"Order":1,"AssetId":9342333632,"AccessoryType":{"Parent":"AccessoryType","EnumVal":"DressSkirt"}},{"IsLayered":true,"Order":1,"AssetId":9239535402,"AccessoryType":{"Parent":"AccessoryType","EnumVal":"Pants"}},{"AssetId":8022084941,"AccessoryType":{"Parent":"AccessoryType","EnumVal":"Hair"},"IsLayered":false}]'
-				for i,v in pairs(game:GetService("HttpService"):JSONDecode(info)) do 
-					desc[i] = type(v) == "table" and Color3.new(v.R, v.G, v.B) or v
-				end
-				local newdesc = {}
-				for i,v in pairs(game:GetService("HttpService"):JSONDecode(info2)) do 
-					local newtab = {}
-					for i2,v2 in pairs(v) do 
-						newtab[i2] = type(v2) == "table" and Enum[v2.Parent][v2.EnumVal] or v2
-					end
-					newdesc[i] = newtab
-				end
-				desc:SetAccessories(newdesc, true)
-				if entity.isAlive then
-					for i,v in pairs(lplr.Character:GetChildren()) do 
-						if v:IsA("Shirt") or v:IsA("Pants") then 
-							v:Remove()
-						end
-					end
-					entity.character.Humanoid:ApplyDescriptionClientServer(desc)
-				end
-				femboyconnection = lplr.CharacterAdded:connect(function(char)
-					local hum = char:WaitForChild("Humanoid")
-					for i,v in pairs(char:GetChildren()) do 
-						if v:IsA("Shirt") or v:IsA("Pants") then 
-							v:Remove()
-						end
-					end
-					char.Humanoid:ApplyDescriptionClientServer(desc)
-				end)
-			else
-				if femboyconnection then
-					femboyconnection:Disconnect()
-				end
-				if entity.isAlive then
-					for i,v in pairs(lplr.Character:GetChildren()) do 
-						if v:IsA("Shirt") or v:IsA("Pants") then 
-							v:Remove()
-						end
-					end
-					local lplrdesc = players:GetHumanoidDescriptionFromUserId(lplr.UserId)
-					entity.character.Humanoid:ApplyDescriptionClientServer(lplrdesc)
-				end
-			end
-		end,
-		["HoverText"] = "femboy mode, will flag on all anticheats :troll: and remove most parts for everyone because fat roblox function"
-	})
-end)]]
