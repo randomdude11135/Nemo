@@ -98,7 +98,7 @@ local function GetURL(scripturl)
 	if shared.VapeDeveloper then
 		return readfile("Nemo/"..scripturl)
 	else
-		return game:HttpGet("https://rawgithubusercontent.com/randomdude11135/Nemo/"..scripturl, true)
+		return game:HttpGet("https://raw.githubusercontent.com/randomdude11135/Nemo/"..scripturl, true)
 	end
 end
 local shalib = loadstring(GetURL("Libraries/sha.lua"))()
@@ -265,7 +265,7 @@ local function getcustomassetfunc(path)
 			textlabel:Remove()
 		end)
 		local req = requestfunc({
-			Url = "https://rawgithubusercontent.com/randomdude11135/Nemo/"..path:gsub("Nemo/assets", "assets"),
+			Url = "https://raw.githubusercontent.com/randomdude11135/Nemo/"..path:gsub("Nemo/assets", "assets"),
 			Method = "GET"
 		})
 		writefile(path, req.Body)
@@ -10664,7 +10664,7 @@ local function isblatant()
 end
 
 task.spawn(function()
-	local url = "https://rawgithubusercontent.com/randomdude11135/Nemo/CustomModules/bedwarsdata"
+	local url = "https://raw.githubusercontent.com/randomdude11135/Nemo/CustomModules/bedwarsdata"
 
 	local function createannouncement(announcetab)
 		local notifyframereal = Instance.new("TextButton")
