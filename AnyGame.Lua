@@ -10,7 +10,7 @@ local function GetURL(scripturl)
 		if not betterisfile("Nemo/"..scripturl) then
 			error("File not found : Nemo/"..scripturl)
 		end
-		return readfile("vape/"..scripturl)
+		return readfile("Nemo/"..scripturl)
 	else
 		local res = game:HttpGet("https://rawgithubusercontent.com/randomdude11135/Nemo/main/"..scripturl, true)
 		assert(res ~= "404: Not Found", "File not found")
@@ -703,7 +703,7 @@ onething2.Position = UDim2.new(1, 0, 0, 1)
 onething2.BorderSizePixel = 0
 onething2.BackgroundColor3 = Color3.new(0, 0, 0)
 onething2.BackgroundTransparency = 1
-onething2.Image = getcustomassetfunc("vape/assets/VapeLogo4.png")
+onething2.Image = getcustomassetfunc("Nemo/assets/VapeLogo4.png")
 local onething3 = onething:Clone()
 onething3.ImageColor3 = Color3.new(0, 0, 0)
 onething3.ImageTransparency = 0.5
