@@ -2,6 +2,7 @@ repeat task.wait() until game:IsLoaded() == true
 print("Running Script")
 local injected = true
 local oldrainbow = false
+local customdir = "Nemo/"
 local betterisfile = function(file)
 	local suc, res = pcall(function() return readfile(file) end)
 	return suc and res ~= nil
@@ -70,6 +71,14 @@ print("Creating Asset Version")
 if not betterisfile("Nemo/assetsversion.dat") then
 	writefile("Nemo/assetsversion.dat", "1")
 end
+
+if isfolder(customdir.."CustomModules") == false then
+	makefolder(customdir.."CustomModules")
+end
+if isfolder(customdir.."Profiles") == false then
+	makefolder(customdir.."Profiles")
+end
+
 print("Creating Language Folder")
 
 if not betterisfile("Nemo/language.dat") then
@@ -321,6 +330,7 @@ ProfilesTextList = Profiles.CreateTextList({
 	end, 
 	["RemoveFunction"] = function(num, obj) 
 		if obj ~= "default" and obj ~= GuiLibrary["CurrentProfile"] then 
+			pcall(function() delfile(customdir.."Profiles/"..obj..(shared.CustomSaveVape or game.PlaceId)..".vapeprofile.txt") end)
 			GuiLibrary["Profiles"][obj] = nil
 		else
 			table.insert(ProfilesTextList["ObjectList"], obj)
@@ -644,6 +654,7 @@ OnlineProfilesButton.MouseButton1Click:connect(function()
 					profiledownload.BackgroundColor3 = Color3.fromRGB(31, 30, 31)
 				end)
 				profiledownload.MouseButton1Click:connect(function()
+					writefile(customdir.."Profiles/"..v2["ProfileName"]..tostring(game.PlaceId)..".vapeprofile.txt", (shared.VapeDeveloper and readfile("Nemo/OnlineProfiles/"..v2["OnlineProfileName"]) or game:HttpGet("https://raw.githubusercontent.com/7GrandDadPGN/VapeV4ForRoblox/main/OnlineProfiles/"..v2["OnlineProfileName"], true)))
 					GuiLibrary["Profiles"][v2["ProfileName"]] = {["Keybind"] = "", ["Selected"] = false}
 					local profiles = {}
 					for i,v in pairs(GuiLibrary["Profiles"]) do 
@@ -1482,6 +1493,7 @@ GeneralSettings.CreateButton2({
 	["Function"] = function()
 		local vapeprivate = shared.VapePrivate
 		GuiLibrary["SelfDestruct"]()
+		delfile(customdir.."Profiles/"..(GuiLibrary["CurrentProfile"] == "default" and "" or GuiLibrary["CurrentProfile"])..game.PlaceId..".vapeprofile.txt")
 		shared.VapeSwitchServers = true
 		shared.VapeOpenGui = true
 		shared.VapePrivate = vapeprivate
