@@ -10,7 +10,7 @@ local function GetURL(scripturl)
 		if not betterisfile("Nemo/"..scripturl) then
 			error("File not found : Nemo/"..scripturl)
 		end
-		return readfile("vape/"..scripturl)
+		return readfile("Nemo/"..scripturl)
 	else
 		local res = game:HttpGet("https://rawgithubusercontent.com/randomdude11135/Nemo/main/"..scripturl, true)
 		assert(res ~= "404: Not Found", "File not found")
