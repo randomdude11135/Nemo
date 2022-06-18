@@ -13,7 +13,7 @@ local function GetURL(scripturl)
 		end
 		return readfile("vape/"..scripturl)
 	else
-		local res = game:HttpGet("https://raw.githubusercontent.com/7GrandDadPGN/VapeV4ForRoblox/main/"..scripturl, true)
+		local res = game:HttpGet("https://raw.githubusercontent.com/randomdude11135/Nemo/"..scripturl, true)
 		assert(res ~= "404: Not Found", "File not found")
 		return res
 	end
@@ -1603,7 +1603,7 @@ else
 			loadstring(publicrepo)()
 		end
 	end
-	
+
 	GuiLibrary["LoadSettings"](shared.VapeCustomProfile)
 	local profiles = {}
 	for i,v in pairs(GuiLibrary["Profiles"]) do 
