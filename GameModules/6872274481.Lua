@@ -104,7 +104,7 @@ end
 local shalib = loadstring(GetURL("Libraries/sha.lua"))()
 local entity = loadstring(GetURL("Libraries/entityHandler.lua"))()
 local whitelisted = {
-	
+
 }
 pcall(function()
 	whitelisted = {}
@@ -4833,6 +4833,7 @@ runcode(function()
 	local killauratarget = {["Enabled"] = false}
 	local killaurasound = {["Enabled"] = false}
 	local killauraswing = {["Enabled"] = false}
+	local killauraInstaKill = {["Enabled"] = false}
 	local killaurahandcheck = {["Enabled"] = false}
 	local killaurabaguette = {["Enabled"] = false}
 	local killauraanimation = {["Enabled"] = false}
@@ -4913,7 +4914,7 @@ runcode(function()
 		if sword and sword["tool"] then
 			local attacksuccess = killaurarealremote:InvokeServer({
 				["weapon"] = sword["tool"],
-				["chargedAttack"] = {chargeRatio = 1},
+				["chargedAttack"] = {chargeRatio = killauraInstaKill["Enabled"] == true and 0/0 or 1},
 				["entityInstance"] = plr.Character,
 				["validate"] = {
 					["raycast"] = {
@@ -5158,6 +5159,13 @@ runcode(function()
 		["Function"] = function() end,
 		["HoverText"] = "Attacks when you are not in a GUI."
 	})
+	
+	killauraInstaKill = Killaura.CreateToggle({
+		["Name"] = "One Punch Man Aura",
+		["Function"] = function() end,
+		["HoverText"] = "You know what it is"
+	})
+	
 	killauratarget = Killaura.CreateToggle({
 		["Name"] = "Show target",
 		["Function"] = function(callback) 
